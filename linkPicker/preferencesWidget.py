@@ -1,14 +1,18 @@
-from PySide2 import QtWidgets
-from PySide2 import QtGui
-from PySide2 import QtCore
+import maya.cmds as cmds
 
-from linkPicker import widgets
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+    Action = QtGui.QAction 
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
+    Action = QtWidgets.QAction
 
+from . import widgets
 
 
 class NullWidget(QtWidgets.QLabel):
     def __init__(self, parent=None):
-        super(NullWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setAlignment(QtCore.Qt.AlignCenter) 
         self.setWordWrap(True)
         self.setText('<img src=":info.png"><h4>No item selected. Click on an item to view details</h4>')
@@ -23,7 +27,7 @@ def createGroupbox(title, layout):
         
 class GeneralWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(GeneralWidget, self).__init__(parent)
+        super().__init__(parent)
         
         self.showViewModeWarningTag = False
         
@@ -44,6 +48,7 @@ class GeneralWidget(QtWidgets.QWidget):
         # main Window
         mainWindowLayout = QtWidgets.QVBoxLayout()
         mainWindowLayout.addWidget(self.showNamespaceCheckBox)
+        mainWindowLayout.addWidget(self.showTabBarCheckBox)
         mainWindowLayout.addWidget(self.autoSelectedCheckBox)
         mainWindowLayout.addWidget(self.closeTabCheckBox)
         mainWindowLayout.addWidget(self.toolBoxCheckBox)
@@ -82,9 +87,11 @@ class GeneralWidget(QtWidgets.QWidget):
     def _createWidgets(self):
         # main Window
         self.showNamespaceCheckBox = QtWidgets.QCheckBox('Display namespace in the toolbar')
+        self.showTabBarCheckBox    = QtWidgets.QCheckBox('Show Tab Bar')
         self.autoSelectedCheckBox  = QtWidgets.QCheckBox('Auto-switch tabs by selected node')
         self.closeTabCheckBox      = QtWidgets.QCheckBox('Show a warning when closing a tab')
         self.toolBoxCheckBox       = QtWidgets.QCheckBox('Show Tool Box')
+        
         
         # picker 
         self.viewModeComboBoxLabel = QtWidgets.QLabel('Viewport Mode:')
@@ -118,6 +125,7 @@ class GeneralWidget(QtWidgets.QWidget):
         return {'showNamespaceCheckBox': self.showNamespaceCheckBox.isChecked(),
                 'autoSelectedCheckBox' : self.autoSelectedCheckBox.isChecked(),
                 'closeTabCheckBox'     : self.closeTabCheckBox.isChecked(),
+                'showTabBarCheckBox'   : self.showTabBarCheckBox.isChecked(),
                 'toolBoxCheckBox'      : self.toolBoxCheckBox.isChecked(),
 
                 
@@ -126,6 +134,7 @@ class GeneralWidget(QtWidgets.QWidget):
         
     def set(self, data):
         self.showNamespaceCheckBox.setChecked(data['showNamespaceCheckBox'])
+        self.showTabBarCheckBox.setChecked(data['showTabBarCheckBox'])
         self.autoSelectedCheckBox.setChecked(data['autoSelectedCheckBox'])
         self.closeTabCheckBox.setChecked(data['closeTabCheckBox'])
         self.toolBoxCheckBox.setChecked(data['toolBoxCheckBox'])
@@ -140,7 +149,7 @@ class GeneralWidget(QtWidgets.QWidget):
 
 class SettingsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(SettingsWidget, self).__init__(parent)
+        super().__init__(parent)
         
         self.showUndoWarningTag = False
         
@@ -228,8 +237,8 @@ class SettingsWidget(QtWidgets.QWidget):
 
         
     def _createConnections(self):
-        self.queueGroup.buttonClicked[int].connect(self.lockQueueAttr)
-        self.undoGroup.buttonClicked[int].connect(self.showUndoWarning)
+        self.queueGroup.buttonClicked.connect(self.lockQueueAttr)
+        self.undoGroup.buttonClicked.connect(self.showUndoWarning)
     
     
     def showUndoWarning(self, index):
@@ -244,8 +253,8 @@ class SettingsWidget(QtWidgets.QWidget):
 
         
     def lockQueueAttr(self, index):
-        self.undoLenEdit.setEnabled(index)
-        self.queueSizeLabel.setEnabled(index)
+        self.undoLenEdit.setEnabled(bool(index))
+        self.queueSizeLabel.setEnabled(bool(index))
     
     
     def get(self):
@@ -274,7 +283,7 @@ class PreferencesWidget(QtWidgets.QDialog):
     preferencesUpdated = QtCore.Signal()
     
     def __init__(self, parent=None, configManager=None):
-        super(PreferencesWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus); self.setFocus()
         self.setWindowTitle('Preferences')
         self.resize(510, 450)
@@ -294,6 +303,7 @@ class PreferencesWidget(QtWidgets.QDialog):
                          ''')  
         
         self.set(self.configManager.get())
+        self.cacheData = self.get()
         
         
     def _createWidgets(self):
@@ -316,9 +326,13 @@ class PreferencesWidget(QtWidgets.QDialog):
     def _createMenu(self):
         self.menuBar = QtWidgets.QMenuBar(self) 
         
-        self.editMenu    = QtWidgets.QMenu('Edit', self)
-        self.resetAction = QtWidgets.QAction('Restore Default Settings', self)
-        self.editMenu.addAction(self.resetAction)
+        self.editMenu = QtWidgets.QMenu('Edit', self)
+        
+        self.revertToSavedAction  = Action('Revert to Saved', self)  
+        self.restoreDefaultAction = Action('Restore Default Settings', self)
+        
+        self.editMenu.addAction(self.revertToSavedAction)
+        self.editMenu.addAction(self.restoreDefaultAction)
 
         self.menuBar.addMenu(self.editMenu)
         
@@ -343,8 +357,9 @@ class PreferencesWidget(QtWidgets.QDialog):
     def _createConnections(self):
         self.cancelButton.clicked.connect(self.close)
         self.ApplyButton.clicked.connect(self.updateConfig)
-
-        self.resetAction.triggered.connect(self.resetToDefault)
+        
+        self.revertToSavedAction.triggered.connect(self.resetToSaved)
+        self.restoreDefaultAction.triggered.connect(self.resetToDefault)
         
         self.listWidget.itemSelectionChanged.connect(self.showSelectedWidget)
         
@@ -377,12 +392,15 @@ class PreferencesWidget(QtWidgets.QDialog):
         
         
     def updateConfig(self):
-        self.configManager.set(self.get())
+        self.cacheData = self.get() # update cacheData
+        
+        self.configManager.set(self.cacheData)
         self.preferencesUpdated.emit()
-        #self.close()
+        self.close()
         
     def resetToDefault(self):
         self.set(self.configManager.DEFAULT_CONFIG) 
         
-
-    
+    def resetToSaved(self):
+        self.set(self.cacheData) 
+        

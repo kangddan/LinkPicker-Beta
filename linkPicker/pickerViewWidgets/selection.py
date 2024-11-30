@@ -1,10 +1,10 @@
 import maya.cmds as cmds
 
 
-def releaseAddSelection(allPickerButtons, 
-                        nonMaxPickerButtons, 
-                        MaxPickerButtons, 
-                        selectedButtons):
+def releaseAddSelection(allPickerButtons   : 'list[PickerButton]', 
+                        nonMaxPickerButtons: 'list[PickerButton]', 
+                        MaxPickerButtons   : 'list[PickerButton]', 
+                        selectedButtons    : 'list[PickerButton]') -> None:
     
     selectedNodes = []
 
@@ -64,8 +64,8 @@ def releaseAddSelection(allPickerButtons,
 
         cmds.select(selectedNodes, ne=True, replace=True)
 
-def releaseSubSelection(clickedButton,
-                        selectedButtons):
+def releaseSubSelection(clickedButton  : 'PickerButton',
+                        selectedButtons: 'list[PickerButton]') -> None:
                             
     if not clickedButton.isMaxButton:
         clickedNonButtons = [button 

@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
-from __future__ import division
 import maya.api.OpenMaya as om2
 import maya.cmds as cmds
-
-
-
-from PySide2 import QtWidgets
-from PySide2 import QtGui
-from PySide2 import QtCore
 from functools import partial
 
-from shiboken2 import getCppPointer
-import maya.OpenMayaUI as omui
-
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+    Action = QtGui.QAction
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
+    Action = QtWidgets.QAction
 
 
 class NullWidget(QtWidgets.QWidget):
@@ -20,7 +16,7 @@ class NullWidget(QtWidgets.QWidget):
     openClicked   = QtCore.Signal()
 
     def __init__(self, parent=None):
-        super(NullWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True) 
         self.setObjectName('nullWidget')
         self._createWidgets()
@@ -78,7 +74,7 @@ class NullWidget(QtWidgets.QWidget):
 class MyTabBar(QtWidgets.QTabBar):
     
     def __init__(self, parent=None):
-        super(MyTabBar, self).__init__(parent)
+        super().__init__(parent)
         
     
 class MyTabWidget(QtWidgets.QTabWidget):
@@ -89,7 +85,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
     openClicked   = QtCore.Signal()
     
     def __init__(self, parent=None):
-        super(MyTabWidget, self).__init__(parent)
+        super().__init__(parent)
         
         self.setMovable(True)
         self.setTabsClosable(True)
@@ -118,13 +114,13 @@ class MyTabWidget(QtWidgets.QTabWidget):
         
     def _createMenu(self):
         self.addTableMenu = QtWidgets.QMenu(self)
-        self.createAction = QtWidgets.QAction('New Tab', self.addTableMenu)
+        self.createAction = Action('New Tab', self.addTableMenu)
         self.addTableMenu.addAction(self.createAction) 
         # ---------------------------------------------------
         self.TableMenu = QtWidgets.QMenu(self)
-        self.duplicateAction   = QtWidgets.QAction('Duplicate Tab',  self.TableMenu)
-        self.closeAllAction    = QtWidgets.QAction('Close All Tabs', self.TableMenu)
-        self.closeOthersAction = QtWidgets.QAction('Close Others',   self.TableMenu)
+        self.duplicateAction   = Action('Duplicate Tab',  self.TableMenu)
+        self.closeAllAction    = Action('Close All Tabs', self.TableMenu)
+        self.closeOthersAction = Action('Close Others',   self.TableMenu)
         self.TableMenu.addAction(self.duplicateAction)
         self.TableMenu.addSeparator()
         self.TableMenu.addAction(self.closeAllAction)
@@ -206,7 +202,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
             elif event.type() == QtCore.QEvent.MouseButtonRelease and event.button() == QtCore.Qt.LeftButton:
                 if self.hasMoved or self.MouseRightandMid:
                     #vis end tab
-                    #If the interval is too slow, quickly dragging the tab may cause 'New Tab' to appear in the wrong position £¡£¡
+                    #If the interval is too slow, quickly dragging the tab may cause 'New Tab' to appear in the wrong position ï¿½ï¿½ï¿½ï¿½
                     self.showTabTimer.start(250)
                 
                 if not isinstance(self.widget(self.count() - 1), NullWidget):
@@ -230,7 +226,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
             return False
             
         else:
-            return super(MyTabWidget, self).eventFilter(obj, event)
+            return super().eventFilter(obj, event)
 
 
     def _showAddTab(self):
@@ -238,10 +234,10 @@ class MyTabWidget(QtWidgets.QTabWidget):
         self.setTabVisible(self.count() - 1, True) 
 
 
-    def addNewTab(self, widget, name=None):
+    def addNewTab(self, widget, name=None) -> int:
         count = self.count()
-        tabName = name or self._getNextName()
-        index = self.insertTab(count - 1, widget, tabName)
+        tabName: str = name or self._getNextName()
+        index:   int = self.insertTab(count - 1, widget, tabName)
         
         # get close button
         closeButton = self.tabBar.tabButton(index, QtWidgets.QTabBar.RightSide)
@@ -252,7 +248,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
         return index
         
         
-    def getWidget(self):
+    def getWidget(self) -> 'list[PickerView]':
         pickerViewWidgets = []
         for i in  range(self.count()):
             widget = self.widget(i)
@@ -261,6 +257,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
             if hasattr(widget, 'getAllPickerButtons'):
                 pickerViewWidgets.append(widget)
         return pickerViewWidgets
+        #return [widget for i in range(self.count()) if not isinstance((widget := self.widget(i)), NullWidget)]
 
     
     def _closeTab(self, index, showWarning=True):
@@ -297,7 +294,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
             except Exception as e:
                 import traceback
                 traceback.print_exc() 
-                om2.MGlobal.displayWarning('Incorrect tab. \n{}'.format(str(e)))
+                om2.MGlobal.displayWarning(f'Incorrect tab. \n{str(e)}')
                 continue
             
             
@@ -323,7 +320,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
         pass
         
 
-    def _getNextName(self):
+    def _getNextName(self) -> str:
         prefix = 'Untitled '
         items  = [self.tabText(i) for i in range(self.count())]
         suffixNumbers = []
@@ -336,7 +333,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
                 suffixNumbers.append(int(suffix))  
  
         maxSuffix = max(suffixNumbers) if suffixNumbers else 0
-        return '{}{}'.format(prefix, maxSuffix + 1)
+        return f'{prefix}{maxSuffix + 1}'
         
         
         
@@ -347,18 +344,17 @@ class ZoomHintWidget(QtWidgets.QWidget):
 class NumberLineEdit(QtWidgets.QLineEdit):
     
     oldAndNewNumber = QtCore.Signal(int)
-    
     def __repr__(self):
-        return "< {} '{}'>".format(self.__class__.__name__, self.get())
+        return f"< {self.__class__.__name__} '{self.get()}'>"
     
-    def __init__(self, dataType ='int', 
+    def __init__(self, dataType: str ='int', 
                        defaultValue=0, 
                        step=1, 
                        minimum=-100, 
                        maximum=100, 
                        parent=None):
                         
-        super(NumberLineEdit, self).__init__(parent)
+        super().__init__(parent)
         self.setAlignment(QtCore.Qt.AlignCenter)
         self._dataType    = dataType
         self._step        = step
@@ -377,6 +373,9 @@ class NumberLineEdit(QtWidgets.QLineEdit):
 
     @staticmethod
     def isNumber(value):
+        # from re import match
+        # pattern = r'^[+-]?(\d+(\.\d*)?|\.\d+)$'
+        # return bool(match(pattern, value))
         try:
             float(value)
             return True
@@ -387,7 +386,7 @@ class NumberLineEdit(QtWidgets.QLineEdit):
     
     def focusInEvent(self, event):
         self._cacheNumber = self.text()
-        super(NumberLineEdit, self).focusInEvent(event)
+        super().focusInEvent(event)
 
     def focusOutEvent(self, event):
         value = self.text()
@@ -406,7 +405,7 @@ class NumberLineEdit(QtWidgets.QLineEdit):
             self._storedValue = value
             self.setText(self._formatDisplayValue(value))
   
-        super(NumberLineEdit, self).focusOutEvent(event)
+        super().focusOutEvent(event)
         
     # -----------------------------------------
     def _valueCheck(self, value):
@@ -416,9 +415,9 @@ class NumberLineEdit(QtWidgets.QLineEdit):
         
     def _formatDisplayValue(self, value):
         if self._dataType == 'float':
-            return '{:.3f}'.format(value)
+            return f'{value:.3f}'
         return str(value)
-   
+        
     def mousePressEvent(self, event):
         if (event.buttons() == QtCore.Qt.MiddleButton and 
            QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier):
@@ -435,7 +434,7 @@ class NumberLineEdit(QtWidgets.QLineEdit):
             if self.dragging:
                 self.dragging = False 
                 self.setCursor(QtCore.Qt.IBeamCursor)
-            super(NumberLineEdit, self).mousePressEvent(event)
+            super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.dragging:
@@ -450,7 +449,7 @@ class NumberLineEdit(QtWidgets.QLineEdit):
                 
                 self.editingFinished.emit() # update signal emit
         else:
-            super(NumberLineEdit, self).mouseMoveEvent(event)
+            super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.MiddleButton:
@@ -462,7 +461,7 @@ class NumberLineEdit(QtWidgets.QLineEdit):
 
             self.setCursor(QtCore.Qt.IBeamCursor)
         else:
-            super(NumberLineEdit, self).mouseReleaseEvent(event)
+            super().mouseReleaseEvent(event)
             
     def get(self):
         return self._storedValue
@@ -478,7 +477,7 @@ class NumberLineEdit(QtWidgets.QLineEdit):
         
 class SelectionBox(QtWidgets.QRubberBand):
     def __init__(self, parent=None, shape=QtWidgets.QRubberBand.Line):
-        super(SelectionBox, self).__init__(shape, parent)
+        super().__init__(shape, parent)
         
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -489,7 +488,7 @@ class SelectionBox(QtWidgets.QRubberBand):
         
 class AxisWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(AxisWidget, self).__init__(parent)
+        super().__init__(parent)
         self.resize(100, 100)
         self.createWidgets()
         
@@ -511,25 +510,25 @@ class AxisWidget(QtWidgets.QWidget):
         painter.drawLine(0, 0, 0, self.height())
         painter.end()
   
-        self.axisLabel.setText('({}, {})'.format(self.pos().x(), self.pos().y()))
+        self.axisLabel.setText(f'({self.pos().x()}, {self.pos().y()})')
 
 
 class CustomItemDelegate(QtWidgets.QStyledItemDelegate):
     def paint(self, painter, option, index):
         if option.state & QtWidgets.QStyle.State_HasFocus:
             option.state &= ~QtWidgets.QStyle.State_HasFocus  # remove focus
-        super(CustomItemDelegate, self).paint(painter, option, index)
+        super().paint(painter, option, index)
            
                 
 class CustomDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent=None, itemHeight=30):
-        super(CustomDelegate, self).__init__(parent)
+        super().__init__(parent)
         self.itemHeight = itemHeight
 
     def sizeHint(self, option, index):
         if index.data() == 'separator':
             return QtCore.QSize(option.rect.width(), 7)
-        size = super(CustomDelegate, self).sizeHint(option, index)
+        size = super().sizeHint(option, index)
         size.setHeight(self.itemHeight)
         return size    
         
@@ -543,7 +542,7 @@ class CustomDelegate(QtWidgets.QStyledItemDelegate):
                              option.rect.right(), option.rect.center().y())
             painter.restore()
         else:
-            super(CustomDelegate, self).paint(painter, option, index)
+            super().paint(painter, option, index)
         
 
 def toParentMidPos(_self, parent):
@@ -562,7 +561,7 @@ class NamespaceEditWidget(QtWidgets.QDialog):
     selectedNamespace = QtCore.Signal(str)
     
     def __init__(self, parent=None, tabWidget=None):
-        super(NamespaceEditWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus); self.setFocus()
         self.setWindowTitle('Select Namespace')
         self.resize(300, 90)
@@ -616,7 +615,7 @@ class NamespaceWidget(QtWidgets.QWidget):
     namespaceClicked = QtCore.Signal(str)
     
     def __init__(self, parent=None):
-        super(NamespaceWidget, self).__init__(parent)
+        super().__init__(parent)
         self._createWidgets()
         self._createLayouts()
         self._createConnections()
@@ -648,6 +647,7 @@ class NamespaceWidget(QtWidgets.QWidget):
     def _createConnections(self):
         self.updateBut.clicked.connect(self.updateNamespace)
         self.namespaceComboBox.currentIndexChanged.connect(lambda i: self.namespaceClicked.emit(self.namespaceComboBox.itemText(i)))
+        #self.namespaceComboBox.currentIndexChanged.connect(lambda i: print(self.namespaceComboBox.itemText(i)))
     
     def namespaceText(self):
         return [self.namespaceComboBox.itemText(i) for i in range(self.namespaceComboBox.count())]
@@ -674,18 +674,22 @@ class NamespaceWidget(QtWidgets.QWidget):
         https://stackoverflow.com/questions/38915001/disable-specific-items-in-qcombobox
         '''
         model = self.namespaceComboBox.model()
-        model.item(1).setFlags(QtCore.Qt.NoItemFlags)
-
+        item = model.item(1) # get separator item
+        if item: item.setFlags(QtCore.Qt.NoItemFlags)
+            
+        # for i in range(model.rowCount()):
+        #     item = model.item(i)
+        #     if item.text() == 'separator':
+        #         item.setFlags(QtCore.Qt.NoItemFlags)
         
         for i in range(self.namespaceComboBox.count()):
             itemText = self.namespaceComboBox.itemText(i)
             if itemText == 'separator':
                 continue
             self.namespaceComboBox.setItemData(i, itemText, QtCore.Qt.ToolTipRole)
-   
-   
-            elidedText = self.namespaceComboBox.fontMetrics().elidedText(itemText, QtCore.Qt.ElideRight, 80)
-            self.namespaceComboBox.setItemData(i, elidedText, QtCore.Qt.DisplayRole)
+            
+            #elidedText = self.namespaceComboBox.fontMetrics().elidedText(itemText, QtCore.Qt.ElideRight, 80)
+            #self.namespaceComboBox.setItemData(i, elidedText, QtCore.Qt.DisplayRole)
         '''
         Unblock the signals
         '''    

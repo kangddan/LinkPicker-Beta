@@ -20,6 +20,7 @@ class ConfigManager(object):
                                   'showNamespaceCheckBox': True,
                                   'autoSelectedCheckBox' : True,
                                   'closeTabCheckBox'     : True,
+                                  'showTabBarCheckBox'   : True,
                                   'toolBoxCheckBox'      : True,
 
                                   'viewModeComboBox'     : 2,
@@ -50,6 +51,5 @@ class ConfigManager(object):
             return ConfigManager.DEFAULT_CONFIG
             
         with open(ConfigManager.CONFIG_PATH, 'r') as f:
-            return json.load(f)
-        
+            return json.load(f)        
     

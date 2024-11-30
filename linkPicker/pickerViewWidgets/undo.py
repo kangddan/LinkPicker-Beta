@@ -1,14 +1,22 @@
-from __future__ import division
-from PySide2 import QtCore
-from PySide2 import QtGui
-from PySide2 import QtWidgets
+import maya.cmds as cmds
 
-from linkPicker.pickerViewWidgets import align, pickerUtils, mirror, zorder
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+    UndoStack   = QtGui.QUndoStack
+    UndoCommand = QtGui.QUndoCommand
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
+    UndoStack   = QtWidgets.QUndoStack
+    UndoCommand = QtWidgets.QUndoCommand
+
+from . import align, pickerUtils, mirror, zorder
 
 
-class PickerViewUndoStackBase(QtWidgets.QUndoStack):
-    def __init__(self, parent=None, enableUndo=True, queue=20):
-        super(PickerViewUndoStackBase, self).__init__(parent)
+class PickerViewUndoStackBase(UndoStack):
+    def __init__(self, parent=None, 
+                       enableUndo: 'undo switch'=True, 
+                       queue:      'undo depth' =20):
+        super().__init__(parent)
         self.enableUndo   = enableUndo
         
         self.oldUndoQueue = queue # undo length
@@ -22,7 +30,7 @@ class PickerViewUndoStackBase(QtWidgets.QUndoStack):
            
     def push(self, command):
         if self.enableUndo:
-            super(PickerViewUndoStackBase, self).push(command)  
+            super().push(command)  
         else:
             command.redo() 
             
@@ -33,7 +41,7 @@ class PickerViewUndoStackBase(QtWidgets.QUndoStack):
             self._getAllCmdData()
             self.clear()
             
-        super(PickerViewUndoStackBase, self).setUndoLimit(undoQueue)
+        super().setUndoLimit(undoQueue)
         
         self._setCmdData()
 
@@ -79,14 +87,14 @@ class PickerViewUndoStackBase(QtWidgets.QUndoStack):
             
     def _resetCache(self):
         self.cacheAllCmd['index'] = -1
-        self.cacheAllCmd['undoDatas'][:] = []
+        self.cacheAllCmd['undoDatas'].clear()
         
 
         
-class PickerViewUndoBase(QtWidgets.QUndoCommand):
+class PickerViewUndoBase(UndoCommand):
     
-    def __init__(self, skipRedo=False):
-        super(PickerViewUndoBase, self).__init__()
+    def __init__(self, skipRedo: bool = False):
+        super().__init__()
         self.skipRedo = skipRedo
         
     def initialize(self):
@@ -110,7 +118,7 @@ class PickerViewUndoBase(QtWidgets.QUndoCommand):
 
 class BaseAlignCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(BaseAlignCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.pickerView = pickerView
         
     
@@ -137,7 +145,7 @@ class BaseAlignCmd(PickerViewUndoBase):
  
             
     def redo(self):
-        if not super(BaseAlignCmd, self).redo():
+        if not super().redo():
             return
         selectedButtons = getButtonsByCacheButtonsID(self.buttonIds, self.pickerView)
         self.run(selectedButtons, self.pickerView.buttonsParentPos, self.pickerView.sceneScale)
@@ -157,7 +165,7 @@ class BaseAlignCmd(PickerViewUndoBase):
   
 class AlignHorizontalCmd(BaseAlignCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(AlignHorizontalCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Align Horizontally')
 
 
@@ -167,7 +175,7 @@ class AlignHorizontalCmd(BaseAlignCmd):
 
 class AlignVerticalCmd(BaseAlignCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(AlignVerticalCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Align Vertically')
 
 
@@ -177,7 +185,7 @@ class AlignVerticalCmd(BaseAlignCmd):
 
 class DistributeEvenlyCmd(BaseAlignCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(DistributeEvenlyCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Distribute Evenly')
 
 
@@ -187,7 +195,7 @@ class DistributeEvenlyCmd(BaseAlignCmd):
 
 class ReverseSelectionCmd(BaseAlignCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(ReverseSelectionCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Reverse Selection')
 
 
@@ -200,7 +208,7 @@ class ReverseSelectionCmd(BaseAlignCmd):
 class CreateButtonsCmd(PickerViewUndoBase):
     
     def __init__(self, pickerView, skipRedo=False):
-        super(CreateButtonsCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.pickerView = pickerView
 
 
@@ -219,7 +227,7 @@ class CreateButtonsCmd(PickerViewUndoBase):
             
       
     def redo(self):
-        if not super(CreateButtonsCmd, self).redo():
+        if not super().redo():
             return
 
         if not self.buttonDatas:
@@ -242,7 +250,7 @@ class CreateButtonsCmd(PickerViewUndoBase):
 class CreateMultipleButtonsCmd(CreateButtonsCmd):
     
     def __init__(self, pickerView, skipRedo=False):
-        super(CreateMultipleButtonsCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Create Multipl Buttons')
     
     def initialize(self):
@@ -251,16 +259,16 @@ class CreateMultipleButtonsCmd(CreateButtonsCmd):
         return self
         
     def undo(self):
-        super(CreateMultipleButtonsCmd, self).undo()
+        super().undo()
         
     def redo(self):
-        super(CreateMultipleButtonsCmd, self).redo()            
+        super().redo()            
             
             
 class MriiroButtonsCmd(CreateButtonsCmd):
     
     def __init__(self, pickerView, skipRedo=False):
-        super(MriiroButtonsCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Mirror Buttons')
         
     def initialize(self):
@@ -269,15 +277,15 @@ class MriiroButtonsCmd(CreateButtonsCmd):
         return self
         
     def undo(self):
-        super(MriiroButtonsCmd, self).undo()
+        super().undo()
         
     def redo(self):
-        super(MriiroButtonsCmd, self).redo()
+        super().redo()
         
 
 class MoveButtonCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(MoveButtonCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Move Button(s)')
         self.pickerView = pickerView
             
@@ -304,7 +312,7 @@ class MoveButtonCmd(PickerViewUndoBase):
         self._moveButtons('old')
                 
     def redo(self):
-        if not super(MoveButtonCmd, self).redo():
+        if not super().redo():
             return
         if self.initUndo:
             self.initUndo = False
@@ -325,7 +333,7 @@ class MoveButtonCmd(PickerViewUndoBase):
 class UpdateButtonCmd(PickerViewUndoBase):
     
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateButtonCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update Button')
         self.pickerView = pickerView
         
@@ -347,7 +355,7 @@ class UpdateButtonCmd(PickerViewUndoBase):
         self._update(self.buttonNodes, self.buttonOldNodes)
       
     def redo(self):
-        if not super(UpdateButtonCmd, self).redo():
+        if not super().redo():
             return
         self._update(self.nweNodes, None)
         
@@ -396,7 +404,7 @@ def getSelectedButtonsInfo(pickerView, buttonsIds):
 def createButtonByInfo(buttonData, pickerView):
     localPos  = QtCore.QPointF(*buttonData['localPos'])
     globalPos = pickerUtils.localToGlobal(localPos, pickerView.buttonsParentPos, pickerView.sceneScale)
-    cenrerPos = globalPos + QtCore.QPointF(buttonData['scaleX'] * pickerView.sceneScale / 2.0, buttonData['scaleY'] * pickerView.sceneScale / 2.0)  
+    cenrerPos = globalPos + QtCore.QPointF(buttonData['scaleX'] * pickerView.sceneScale / 2, buttonData['scaleY'] * pickerView.sceneScale / 2)  
 
     pickerView.buttonGlobalPos = cenrerPos
     _data = {'color'     : QtGui.QColor(*buttonData['color']),
@@ -435,7 +443,7 @@ def getButtonsByCacheButtonsID(buttonsId, pickerView):
 class DeleteButtonCmd(PickerViewUndoBase):
     
     def __init__(self, pickerView, skipRedo=False):
-        super(DeleteButtonCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Delete Button(s)')
         self.pickerView  = pickerView      
   
@@ -460,7 +468,7 @@ class DeleteButtonCmd(PickerViewUndoBase):
         
          
     def redo(self):
-        if not super(DeleteButtonCmd, self).redo():
+        if not super().redo():
             return
         if not self.buttonDatas: 
             self.buttonDatas = getSelectedButtonsInfo(self.pickerView, self.buttonsId) 
@@ -487,7 +495,7 @@ class DeleteButtonCmd(PickerViewUndoBase):
 class CreateSingleButtonCmd(PickerViewUndoBase):
     
     def __init__(self, pickerView, skipRedo=False):
-        super(CreateSingleButtonCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Create Single Button')
         self.pickerView = pickerView
 
@@ -504,7 +512,7 @@ class CreateSingleButtonCmd(PickerViewUndoBase):
             self.pickerView._updateButtonsCache(button) # update cache
      
     def redo(self):
-        if not super(CreateSingleButtonCmd, self).redo():
+        if not super().redo():
             return
             
         if not self.buttonDta:
@@ -529,7 +537,7 @@ class CreateSingleButtonCmd(PickerViewUndoBase):
    
 class ZOrderBaseCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(ZOrderBaseCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.pickerView = pickerView      
         
     def initialize(self):
@@ -546,7 +554,7 @@ class ZOrderBaseCmd(PickerViewUndoBase):
         self.pickerView.allPickerButtons = self.pickerView.getAllPickerButtons() 
         
     def redo(self):
-        if not super(ZOrderBaseCmd, self).redo():
+        if not super().redo():
             return
         buttons = getButtonsByCacheButtonsID(self.buttonsId, self.pickerView)
 
@@ -570,7 +578,7 @@ class ZOrderBaseCmd(PickerViewUndoBase):
 
 class RaiseCmd(ZOrderBaseCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(RaiseCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Raise Selected Buttons')
 
 
@@ -580,7 +588,7 @@ class RaiseCmd(ZOrderBaseCmd):
 
 class LowerCmd(ZOrderBaseCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(LowerCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Lower Selected Buttons')
 
 
@@ -590,7 +598,7 @@ class LowerCmd(ZOrderBaseCmd):
         
 class UpCmd(ZOrderBaseCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(UpCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Move Selected Buttons Up')
         
     def run(self, buttons):
@@ -600,7 +608,7 @@ class UpCmd(ZOrderBaseCmd):
 
 class DownCmd(ZOrderBaseCmd):
     def __init__(self, pickerView, skipRedo=False):
-        super(DownCmd, self).__init__(pickerView, skipRedo)
+        super().__init__(pickerView, skipRedo)
         self.setText('Move Selected Buttons Down')
  
     def run(self, buttons):
@@ -611,7 +619,7 @@ class DownCmd(ZOrderBaseCmd):
   
 class UpdateButtonsColorCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateButtonsColorCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update Color')
         self.pickerView = pickerView      
         
@@ -631,7 +639,7 @@ class UpdateButtonsColorCmd(PickerViewUndoBase):
                 button.updateColor(QtGui.QColor(*color))
         
     def redo(self):
-        if not super(UpdateButtonsColorCmd, self).redo():
+        if not super().redo():
             return
 
         buttons = getButtonsByCacheButtonsID(list(self.oldSelectedButtonsColor.keys()), self.pickerView)
@@ -651,7 +659,7 @@ class UpdateButtonsColorCmd(PickerViewUndoBase):
 
 class UpdateButtonsTextColorCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateButtonsTextColorCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update Text Color')
         self.pickerView = pickerView      
         
@@ -671,7 +679,7 @@ class UpdateButtonsTextColorCmd(PickerViewUndoBase):
                 button.updateLabelColor(QtGui.QColor(*color))
         
     def redo(self):
-        if not super(UpdateButtonsTextColorCmd, self).redo():
+        if not super().redo():
             return
 
         buttons = getButtonsByCacheButtonsID(list(self.oldSelectedButtonsTextColor.keys()), self.pickerView)
@@ -691,7 +699,7 @@ class UpdateButtonsTextColorCmd(PickerViewUndoBase):
      
 class UpdateButtonsTextCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateButtonsTextCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update Text')
         self.pickerView = pickerView      
         
@@ -710,7 +718,7 @@ class UpdateButtonsTextCmd(PickerViewUndoBase):
                 button.updateLabelText(oldText, self.pickerView.sceneScale)
         
     def redo(self):
-        if not super(UpdateButtonsTextCmd, self).redo():
+        if not super().redo():
             return
 
         buttons = getButtonsByCacheButtonsID(list(self.oldSelectedButtonsText.keys()), self.pickerView)
@@ -730,7 +738,7 @@ class UpdateButtonsTextCmd(PickerViewUndoBase):
         
 class UpdateSelectedButtonsScaleCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateSelectedButtonsScaleCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update Scale')
         self.pickerView = pickerView      
         
@@ -751,7 +759,7 @@ class UpdateSelectedButtonsScaleCmd(PickerViewUndoBase):
                 button.scaleText(self.pickerView.sceneScale)
         
     def redo(self):
-        if not super(UpdateSelectedButtonsScaleCmd, self).redo():
+        if not super().redo():
             return
 
         buttons = getButtonsByCacheButtonsID(list(self.oldSelectedButtonsScale.keys()), self.pickerView)
@@ -775,7 +783,7 @@ class UpdateSelectedButtonsScaleCmd(PickerViewUndoBase):
 
 class UpdateButtonsScaleXCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateButtonsScaleXCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update ScaleX')
         self.pickerView = pickerView  
            
@@ -796,7 +804,7 @@ class UpdateButtonsScaleXCmd(PickerViewUndoBase):
             self.pickerView.buttonManager.updateToolBoxWidget(self.pickerView.selectedButtons[-1])
                 
     def redo(self):
-        if not super(UpdateButtonsScaleXCmd, self).redo():
+        if not super().redo():
             return
 
         if self.initUndo:
@@ -829,7 +837,7 @@ class UpdateButtonsScaleXCmd(PickerViewUndoBase):
 
 class UpdateButtonsScaleYCmd(PickerViewUndoBase):
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateButtonsScaleYCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update ScaleY')
         self.pickerView = pickerView  
            
@@ -851,7 +859,7 @@ class UpdateButtonsScaleYCmd(PickerViewUndoBase):
             self.pickerView.buttonManager.updateToolBoxWidget(self.pickerView.selectedButtons[-1])
                 
     def redo(self):
-        if not super(UpdateButtonsScaleYCmd, self).redo():
+        if not super().redo():
             return
 
         if self.initUndo:
@@ -886,7 +894,7 @@ class UpdateButtonsScaleYCmd(PickerViewUndoBase):
 class UpdateButtonsNamespaceCmd(PickerViewUndoBase):
     
     def __init__(self, pickerView, skipRedo=False):
-        super(UpdateButtonsNamespaceCmd, self).__init__(skipRedo=skipRedo)
+        super().__init__(skipRedo=skipRedo)
         self.setText('Update Namespace')
         self.pickerView = pickerView
         
@@ -917,7 +925,7 @@ class UpdateButtonsNamespaceCmd(PickerViewUndoBase):
         self.pickerView.mainUI._selectNamespace(self.pickerOldNamespace)
       
     def redo(self):
-        if not super(UpdateButtonsNamespaceCmd, self).redo():
+        if not super().redo():
             return
         
         self.pickerView.namespace = self.pickerNewNamespace
@@ -947,4 +955,8 @@ class UpdateButtonsNamespaceCmd(PickerViewUndoBase):
         self.pickerNewNamespace = data['pickerNewNamespace']
         self.buttonsInfo        = data['buttonsInfo']
         self.initUndo           = data['initUndo']
-   
+
+
+  
+    
+    

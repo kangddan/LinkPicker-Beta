@@ -1,28 +1,28 @@
-from __future__ import division
 import uuid
+import maya.cmds as cmds
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
 
-from PySide2 import QtWidgets
-from PySide2 import QtGui
-from PySide2 import QtCore
-
-from linkPicker import path
-from linkPicker.pickerViewWidgets import pickerUtils
+from .. import path
+from . import pickerUtils
 
 
 class PickerButton(QtWidgets.QWidget):
     SELECTED_COLOR = QtGui.QColor(225, 225, 225)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         globaPos = self.pos()
         localPos = self.localPos
-        return '<{} at {}: G->({}, {}), L->({}, {})>'.format(self.__class__.__name__, hex(id(self)), globaPos.x(), globaPos.y(), localPos.x(), localPos.y())
+        return f'<{self.__class__.__name__} at {hex(id(self))}: G->({globaPos.x()}, {globaPos.y()}), L->({localPos.x()}, {localPos.y()})>'
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.nodes)
     
     
-    def __contains__(self, other):
+    def __contains__(self, other) -> bool:
         if isinstance(other, self.__class__):
             return all(node in self.nodes for node in other.nodes)
         elif isinstance(other, str):
@@ -34,7 +34,7 @@ class PickerButton(QtWidgets.QWidget):
         return (node for node in self.nodes)
     
     
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.nodes)
         
         
@@ -44,24 +44,22 @@ class PickerButton(QtWidgets.QWidget):
         elif isinstance(index, str):
             if index in self.__dict__:
                 return self.__dict__[index]
-            raise KeyError("Key '{}' not found in object attributes.".format(index, ))
+            raise KeyError(f"Key '{index}' not found in object attributes.")
         else:
-            raise TypeError("Index must be an int or str, got {}.".format(type(index).__name__))
-
-        
+            raise TypeError(f"Index must be an int or str, got {type(index).__name__}.")
 
     
-    def __init__(self, globalPos, 
-                       parentPos, 
-                       color = QtGui.QColor(100, 100, 100),
-                       sceneScale = 1.0, 
-                       scaleX = 40,
-                       scaleY = 40,
-                       textColor = QtGui.QColor(10, 10, 10),
-                       labelText = '',
-                       parent = None,
-                       nodes  = None,
-                       buttonId = None):  
+    def __init__(self, globalPos : QtCore.QPointF, 
+                       parentPos : QtCore.QPointF, 
+                       color     : QtGui.QColor = QtGui.QColor(100, 100, 100),
+                       sceneScale: float = 1.0, 
+                       scaleX    : int = 40,
+                       scaleY    : int = 40,
+                       textColor : QtGui.QColor = QtGui.QColor(10, 10, 10),
+                       labelText : str = '',
+                       parent    : QtWidgets.QWidget = None,
+                       nodes     : list = None,
+                       buttonId  : str = None):  
         '''
         Args:
             globalPos (QPointF): Initial global position of the button when created.
@@ -76,7 +74,7 @@ class PickerButton(QtWidgets.QWidget):
             nodes (str)        : Maya node names
             buttonId (int)     : uuid
         '''
-        super(PickerButton, self).__init__(parent)
+        super().__init__(parent)
 
         self.scaleX     = scaleX
         self.scaleY     = scaleY
@@ -86,7 +84,7 @@ class PickerButton(QtWidgets.QWidget):
         _width  = round(scaleX * sceneScale)
         _height = round(scaleY * sceneScale)
         
-        globalTopLeftPos = QtCore.QPointF(globalPos.toPoint().x() - _width / 2.0, globalPos.toPoint().y() - _height / 2.0) # get button top left Pos
+        globalTopLeftPos = QtCore.QPointF(globalPos.toPoint().x() - _width / 2, globalPos.toPoint().y() - _height / 2) # get button top left Pos
         
         self.resize(_width, _height)
         self.move(globalTopLeftPos.toPoint())
@@ -112,7 +110,7 @@ class PickerButton(QtWidgets.QWidget):
         
 
     def _setToolTop(self):
-        tooltipText = '<br>'.join('-> {}'.format(node) for node in self.nodes)
+        tooltipText = '<br>'.join(f'-> {node}' for node in self.nodes)
         self.setToolTip(tooltipText)
         
         
@@ -128,7 +126,7 @@ class PickerButton(QtWidgets.QWidget):
         self._setToolTop()
         
         
-    def updateNamespace(self, namespace):
+    def updateNamespace(self, namespace: str):
         self.nodes = self.oldNodes if namespace == ':' else path.updateNamespaceWithOptional(self.nodes, namespace)
         
         # clear namespace and update oldNodes
@@ -148,60 +146,60 @@ class PickerButton(QtWidgets.QWidget):
         mainLayout.addWidget(self.textLabel)
         
         
-    def updateLabelText(self, text, sceneScale):
+    def updateLabelText(self, text: str, sceneScale: float):
         self.labelText = text
         self.scaleText(sceneScale)
         
-    def scaleText(self, sceneScale):
+    def scaleText(self, sceneScale: float):
         font = QtGui.QFont('Verdana', round(self.scaleY * sceneScale * 0.15))
     
         self.textLabel.setFont(font)
         self.textLabel.setText(self.labelText)
         
         
-    def updateLabelColor(self, color):
+    def updateLabelColor(self, color: QtGui.QColor):
         self.textColor = color
         palette = self.textLabel.palette()
         palette.setColor(QtGui.QPalette.WindowText, self.textColor) 
         self.textLabel.setPalette(palette)
     
 
-    def setSelected(self, selected):
+    def setSelected(self, selected: bool) -> None:
         self.selected    = selected
         self.buttonColor = PickerButton.SELECTED_COLOR if self.selected else self.color
         self.update()
         
     
-    def resetPos(self, buttonsParentPos=QtCore.QPointF()):
+    def resetPos(self, buttonsParentPos=QtCore.QPointF()) -> None:
         self.resize(self.scaleX, self.scaleY)
         self.move(self.localPos.toPoint() + buttonsParentPos.toPoint())
     
     
-    def updateLocalPos(self, globalPos, 
-                             parentPos, 
-                             sceneScale):
+    def updateLocalPos(self, globalPos: QtCore.QPointF, 
+                             parentPos: QtCore.QPointF, 
+                             sceneScale: float) -> None:
         self.localPos = pickerUtils.globalToLocal(globalPos, parentPos, sceneScale)
         
          
-    def updateColor(self, color):
+    def updateColor(self, color: QtGui.QColor) -> None:
         if color == self.color:
             return
         self.color = self.buttonColor = color
         self.update()
     
     
-    def cenrerPos2(self, globalPos, sceneScale):
+    def cenrerPos2(self, globalPos:QtCore.QPointF, sceneScale: float) -> QtCore.QPointF:
         '''
         Use internal floating-point values to calculate the center position for higher precision
         '''
-        return globalPos + QtCore.QPointF(self.scaleX * sceneScale / 2.0, self.scaleY * sceneScale / 2.0)    
+        return globalPos + QtCore.QPointF(self.scaleX * sceneScale / 2, self.scaleY * sceneScale / 2)    
   
   
-    def cenrerPos(self, globalPos):
-        return globalPos + QtCore.QPointF(self.width() / 2.0, self.height() / 2.0)
+    def cenrerPos(self, globalPos:QtCore.QPointF) -> QtCore.QPointF:
+        return globalPos + QtCore.QPointF(self.width() / 2, self.height() / 2)
 
     
-    def updateScaleX(self, scaleX, sceneScale, parentPos) :  
+    def updateScaleX(self, scaleX: int, sceneScale: float, parentPos: QtCore.QPointF) -> None:  
         if scaleX == self.scaleX:
             return
             
@@ -209,7 +207,7 @@ class PickerButton(QtWidgets.QWidget):
         self._scale(sceneScale, parentPos)
         
 
-    def updateScaleY(self, scaleY, sceneScale, parentPos):
+    def updateScaleY(self, scaleY: int, sceneScale: float, parentPos: QtCore.QPointF) -> None:
         if scaleY == self.scaleY:
             return
  
@@ -217,12 +215,13 @@ class PickerButton(QtWidgets.QWidget):
         self._scale(sceneScale, parentPos)
     
     
-    def _scale(self, sceneScale, parentPos):
+    def _scale(self, sceneScale: float, parentPos: QtCore.QPointF) -> None:
         newWidth  = round(self.scaleX * sceneScale)
         newHeight = round(self.scaleY * sceneScale)
         
         globalPos = pickerUtils.localToGlobal(self.localPos, parentPos, sceneScale)
         
+
         oldCenter = self.cenrerPos(globalPos)
         self.resize(newWidth, newHeight)
         newCenter = self.cenrerPos(globalPos)
@@ -257,7 +256,7 @@ class PickerButton(QtWidgets.QWidget):
         self.update()
         
         
-    def get(self):
+    def get(self) -> dict:
         return {'color'    :self.color,
                 'scaleX'   :self.scaleX,
                 'scaleY'   :self.scaleY,

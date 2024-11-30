@@ -1,10 +1,5 @@
-   
-import sys
-
-if sys.version_info[0] < 3:
-    reload = reload  
-else:
-    from importlib import reload
+import maya.api.OpenMaya as om2
+from importlib import reload
     
 
 modulesToReload = [
@@ -28,14 +23,12 @@ def reloadIt():
             print('Error reloading {}: {}'.format(moduleName, e))
 
     print('-------------------- ALL RELOAD : OK')
+    om2.MGlobal.displayInfo('-------------------- ALL RELOAD : OK')
 
 if __name__ == '__main__':
     reloadIt()
     
-    
-    
-    
-    
+
     
 
     

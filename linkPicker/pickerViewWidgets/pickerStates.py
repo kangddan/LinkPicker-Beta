@@ -1,28 +1,23 @@
-from __future__ import division
 import math
+import maya.cmds as cmds
 
-import sys
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-from PySide2 import QtCore
-from linkPicker.pickerViewWidgets import pickerUtils, selection, undo
-
-
-if sys.version_info[0] == 2:
-    class ABC(object):
-        __metaclass__ = ABCMeta
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtCore
 else:
-    from abc import ABC
+    from PySide2 import QtCore
+
+from . import pickerUtils, selection, undo
+
 
 class MouseState(ABC):
     @abstractmethod
     def handlePressEvent(self, event, picker):
         pass
-
     @abstractmethod
     def handleMoveEvent(self, event, picker):
         pass
-
     @abstractmethod
     def handleReleaseEvent(self, event, picker):
         pass
@@ -67,7 +62,7 @@ class CreateButtonsState(MouseState):
         picker.undoStack.push(undo.CreateMultipleButtonsCmd(picker).initialize())
         
         picker.selectedButtons.extend(picker.trackedButtons)
-        picker.trackedButtons = []
+        picker.trackedButtons.clear()
         for button in picker.selectedButtons:
             button.setSelected(True)
             
@@ -132,7 +127,7 @@ class ScaleViewState(MouseState):
         #picker.sceneScale = max(0.20, min(picker.origScale + (offset.x() + offset.y())  * (picker.ZoomDrag * 0.0003), 10.0)) # update scale
         picker.sceneScale = max(0.20, 
                             min(picker.origScale + (offset.x() + offset.y())  
-                            * (picker.ZoomDrag / 200.0) ** math.e, 10.0)) # update scale
+                            * (picker.ZoomDrag / 200) ** math.e, 10.0)) # update scale
         
         _scale = picker.sceneScale / picker.origScale
         cx, cy = picker.clickedPos.x(), picker.clickedPos.y()
@@ -219,7 +214,7 @@ class SelectedState(MouseState):
       
 
     def handleReleaseEvent(self, event, picker):
-        picker.shiftAddButtons = []
+        picker.shiftAddButtons.clear()
         picker.selectionBox.hide() # hide selectionBox
         
         # clear selected button
@@ -311,4 +306,5 @@ class MoveButtonsState(MouseState):
         # add undo
         if picker.undoMoveButtonsPosMap:
             picker.undoStack.push(undo.MoveButtonCmd(picker).initialize())
+
 

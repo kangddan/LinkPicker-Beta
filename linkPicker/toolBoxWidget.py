@@ -1,7 +1,8 @@
-from PySide2 import QtWidgets
-from PySide2 import QtCore
-from PySide2 import QtGui
-
+import maya.cmds as cmds
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
 
 from linkPicker import colorWidget, widgets
 
@@ -20,7 +21,7 @@ class ToolBoxWidget(QtWidgets.QWidget):
     scaleYUndo = QtCore.Signal(int)
     
     def __init__(self, parent=None):
-        super(ToolBoxWidget, self).__init__(parent)
+        super().__init__(parent)
         self._createWidgets()
         self._createLayouts()
         self._createConnections()
@@ -83,8 +84,8 @@ class ToolBoxWidget(QtWidgets.QWidget):
         Ensure that the signal defined inside focusOutEvent triggers after the editingFinished signal 
         to guarantee correct data retrieval and facilitate the undo operation.
         '''
-        self.widthNumberLineEdit.oldAndNewNumber[int].connect(self.scaleXUndo.emit)
-        self.heightNumberLineEdit.oldAndNewNumber[int].connect(self.scaleYUndo.emit)
+        self.widthNumberLineEdit.oldAndNewNumber.connect(self.scaleXUndo.emit)
+        self.heightNumberLineEdit.oldAndNewNumber.connect(self.scaleYUndo.emit)
         
         
         
@@ -105,11 +106,11 @@ class ToolBoxWidget(QtWidgets.QWidget):
             self.updateLayout = True
             self._moveWidgets(self.toolBoxLayout2, self.toolBoxLayout1, [self.buttonLabel, self.labelTextColor, self.labelLineEdit])
 
-        super(ToolBoxWidget, self).resizeEvent(event)
+        super().resizeEvent(event)
         
         
     # -----------------------------------------------------
-    def set(self, data):
+    def set(self, data: dict):
         color     = data['color']
         scaleX    = data['scaleX']
         scaleY    = data['scaleY'] 
@@ -127,7 +128,7 @@ class ToolBoxWidget(QtWidgets.QWidget):
         self.labelLineEdit.setText(text)
         
         
-    def get(self):
+    def get(self) -> dict:
         data = {'color':self.buttonColorLabel.getColor(),
                 'scaleX':self.widthNumberLineEdit.get(),
                 'scaleY':self.heightNumberLineEdit.get(),
@@ -135,4 +136,3 @@ class ToolBoxWidget(QtWidgets.QWidget):
                 'textColor':self.labelTextColor.getColor()
                 }  
         return data
-        

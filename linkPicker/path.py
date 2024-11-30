@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-def rootName(name):
+def rootName(name: str) -> str:
     """Returns the base name without group information.
 
     Args:
@@ -17,7 +17,7 @@ def rootName(name):
     return name.rpartition('|')[-1]
 
     
-def baseName(name):
+def baseName(name: str) -> str:
     """Returns the name without groups or namespace.
 
     Args:
@@ -33,7 +33,7 @@ def baseName(name):
     return rootName(name).rpartition(':')[-1]
     
 
-def namespace(name):
+def namespace(name: str) -> str:
     """Returns the namespace, if present.
 
     Args:
@@ -52,17 +52,17 @@ def namespace(name):
     return ''
     
     
-    
-def updateNamespaceWithOptional(oldNamespaces, newNamespace):
+def updateNamespaceWithOptional(oldNamespaces: list, newNamespace: str) -> 'list[str]':
     updatedNamespaces = []
     for name in oldNamespaces:
         parts = name.split('|')
         updatedParts = [
-            "{}{}".format(newNamespace + ":" if newNamespace else "", part.split(':', 1)[-1])
+            f"{newNamespace + ':' if newNamespace else ''}{part.split(':', 1)[-1]}"
             for part in parts
         ]
         updatedName = '|'.join(updatedParts)
         updatedNamespaces.append(updatedName)
     return updatedNamespaces
+    
     
 

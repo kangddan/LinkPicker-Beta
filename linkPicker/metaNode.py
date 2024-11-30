@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-import os
-import sys
 import json
 import maya.cmds as cmds
 
@@ -8,14 +5,14 @@ import maya.cmds as cmds
 class PickerDataNode(object):
     
     def __repr__(self):
-        return u'< PickerDataNode at {}: {} >'.format(hex(id(self)), self.node)
+        return f'< PickerDataNode at {hex(id(self))}: {self.node} >'
         
         
     def __str__(self):
-        return unicode(self.node) if sys.version_info[0] == 2 else str(self.node)
+        return self.node
         
         
-    def __init__(self, node):
+    def __init__(self, node:str):
         self.node = node
     
     
@@ -26,17 +23,17 @@ class PickerDataNode(object):
     
     def lockAttr(self, state=True):
         self.unlock()
-        cmds.setAttr('{}.linkPickerData'.format(self.node), lock=state)
+        cmds.setAttr(f'{self.node}.linkPickerData', lock=state)
 
  
-    def set(self, data):
+    def set(self, data: list):
         self.lockAttr(False)
-        cmds.setAttr('{}.linkPickerData'.format(self.node), json.dumps(data, ensure_ascii=False), type='string')
+        cmds.setAttr(f'{self.node}.linkPickerData', json.dumps(data), type='string')
         self.lockAttr(True)
         
  
-    def get(self):
-        return json.loads(cmds.getAttr('{}.linkPickerData'.format(self.node)))
+    def get(self) -> list:
+        return json.loads(cmds.getAttr(f'{self.node}.linkPickerData'))
         
         
     def delete(self):
@@ -45,52 +42,52 @@ class PickerDataNode(object):
     
     
     @property
-    def isTagReference(self):
-        return cmds.getAttr('{}.isReferenced'.format(self.node))
+    def isTagReference(self) -> bool:
+        return cmds.getAttr(f'{self.node}.isReferenced')
         
         
     def tagReference(self):
-        cmds.setAttr('{}.isReferenced'.format(self.node), True)
+        cmds.setAttr(f'{self.node}.isReferenced', True)
         
     @property    
-    def isReferenced(self):
+    def isReferenced(self) -> bool:
         return cmds.referenceQuery(self.node, isNodeReferenced=True)
 
     
-def getPickerDataNode():
+def getPickerDataNode() -> 'list[PickerDataNode]':
     pickerDataNodes = []
     for node in cmds.ls(typ='network'):
-        if cmds.objExists('{}.isLinkPicker'.format(node)) and cmds.getAttr('{}.isLinkPicker'.format(node)) and not cmds.getAttr('{}.isReferenced'.format(node)):
+        if cmds.objExists(f'{node}.isLinkPicker') and cmds.getAttr(f'{node}.isLinkPicker') and not cmds.getAttr(f'{node}.isReferenced'):
             pickerDataNodes.append(PickerDataNode(node))
              
     return pickerDataNodes or [createPickerDataNode()]
     
     
-def createPickerDataNode():
+def createPickerDataNode() -> PickerDataNode:
     metaNode = cmds.createNode('network', name='Link_Picker_Meta', ss=True)
     cmds.addAttr(metaNode, ln='isLinkPicker', at='bool', dv=True)
     cmds.addAttr(metaNode, ln='isReferenced', at='bool', dv=False)
     cmds.addAttr(metaNode, ln='linkPickerData', dt='string')
-    cmds.setAttr('{}.linkPickerData'.format(metaNode), '[]', type='string')
+    cmds.setAttr(f'{metaNode}.linkPickerData', '[]', type='string')
     
-    cmds.setAttr('{}.isLinkPicker'.format(metaNode), lock=True)
-    cmds.setAttr('{}.linkPickerData'.format(metaNode), lock=True)
+    cmds.setAttr(f'{metaNode}.isLinkPicker', lock=True)
+    cmds.setAttr(f'{metaNode}.linkPickerData', lock=True)
     
     return PickerDataNode(metaNode)
 
 
-def getReferenceNodeData():
+def getReferenceNodeData() -> list:
     refNodeDatas = []
     for node in cmds.ls(typ='network'):
-        if not (cmds.objExists('{}.isLinkPicker'.format(node)) and cmds.getAttr('{}.isLinkPicker'.format(node)) and not cmds.getAttr('{}.isReferenced'.format(node))):
+        if not (cmds.objExists(f'{node}.isLinkPicker') and cmds.getAttr(f'{node}.isLinkPicker') and not cmds.getAttr(f'{node}.isReferenced')):
             continue
         if cmds.referenceQuery(node, isNodeReferenced=True):
-            refNodeDatas.extend(json.loads(cmds.getAttr('{}.linkPickerData'.format(node)))) 
+            refNodeDatas.extend(json.loads(cmds.getAttr(f'{node}.linkPickerData'))) 
                          
     return refNodeDatas
     
     
-def mergeNodes():
+def mergeNodes() -> PickerDataNode:
     metaNodes = getPickerDataNode()
     
     noRefTagMetaNodes = [metaNode for metaNode in metaNodes if not metaNode.isTagReference]
@@ -103,7 +100,7 @@ def mergeNodes():
     for metaNode in metaNodes:
         data = metaNode.get()
         if not isinstance(data, list):
-            raise TypeError(u'Expected data to be of type list, but got {} for node {}'.format(type(data).__name__, metaNode.node))
+            raise TypeError(f'Expected data to be of type list, but got {type(data).__name__} for node {metaNode.node}')
         newData.extend(data)
         if metaNode.isReferenced:
             metaNode.tagReference()
@@ -113,3 +110,4 @@ def mergeNodes():
     newNode = createPickerDataNode()
     newNode.set(newData)
     return newNode
+        

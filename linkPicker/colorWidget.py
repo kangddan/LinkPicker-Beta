@@ -3,11 +3,17 @@ import maya.api.OpenMaya as om2
 import maya.OpenMayaUI   as omui
 
 from functools import partial
-from shiboken2 import wrapInstance
 
-from PySide2 import QtWidgets
-from PySide2 import QtCore
-from PySide2 import QtGui
+if int(cmds.about(version=True)) >= 2025:
+    from shiboken6 import wrapInstance
+    from PySide6   import QtWidgets, QtCore, QtGui
+    Action      = QtGui.QAction
+    ActionGroup = QtGui.QActionGroup 
+else:
+    from shiboken2 import wrapInstance
+    from PySide2   import QtWidgets, QtCore, QtGui
+    Action      = QtWidgets.QAction
+    ActionGroup = QtWidgets.QActionGroup
 
 
 class _IndexColorPicker(QtWidgets.QDialog):
@@ -17,7 +23,7 @@ class _IndexColorPicker(QtWidgets.QDialog):
     mayaIndexToQtColor  = QtCore.Signal(QtGui.QColor)
     
     def __init__(self, parent=None):
-        super(_IndexColorPicker, self).__init__(parent)
+        super().__init__(parent)
         self.setObjectName('indexColorPicker')
         
         self.index = 16
@@ -36,13 +42,11 @@ class _IndexColorPicker(QtWidgets.QDialog):
         
     def _createWidgets(self):
         colors = [QtGui.QColor(119, 119, 119)] + [self.indexToQtColor(i) for i in range(1, 32)]
-
         self.buttonGroup = QtWidgets.QButtonGroup(self)
 
         self.buttons = []
         for index, color in enumerate(colors):
-            button = QtWidgets.QPushButton(str(index) if index != 0 else 'RST')
-            
+            button = QtWidgets.QPushButton(f'{index}' if index != 0 else 'RST')
             button.setFixedSize(45, 45)
             self._setButColor(button, color)
             self.buttonGroup.addButton(button, index)
@@ -74,25 +78,26 @@ class _IndexColorPicker(QtWidgets.QDialog):
         
         
     def _createConnections(self):
-        self.buttonGroup.buttonClicked[int].connect(self._getColor)
+        self.buttonGroup.buttonClicked.connect(self._getColor)
         
         
-    def _getColor(self, index):
+    def _getColor(self, button):
+        index = self.buttonGroup.id(button) 
         if index == 0:
             return
         self.index = index
-        self.mayaIndexColor.emit(index)
-        self.mayaIndextoRGBColor.emit(cmds.colorIndex(index, q=True))
-        self.mayaIndexToQtColor.emit(self.indexToQtColor(index))
+        self.mayaIndexColor.emit(self.index)
+        self.mayaIndextoRGBColor.emit(cmds.colorIndex(self.index, q=True))
+        self.mayaIndexToQtColor.emit(self.indexToQtColor(self.index))
     
     # --------------------------------------------------------------------------------    
     @staticmethod
-    def indexToQtColor(index):
+    def indexToQtColor(index) -> QtGui.QColor:
         rgb = [int(channel * 255) for channel in cmds.colorIndex(index, q=True)]
         return QtGui.QColor(*rgb)
         
         
-    def _textColor(self, BGColor):
+    def _textColor(self, BGColor) -> QtGui.QColor:
         value = (BGColor.red() * 299 + BGColor.green() * 587 + BGColor.blue() * 114) / 1000
         return QtGui.QColor(QtCore.Qt.black) if value > 128 else QtGui.QColor(QtCore.Qt.white)
         
@@ -107,7 +112,7 @@ class _IndexColorPicker(QtWidgets.QDialog):
         
         
     def mouseMoveEvent(self, mouseEvent):
-        super(_IndexColorPicker, self).mouseMoveEvent(mouseEvent)
+        super().mouseMoveEvent(mouseEvent)
         globalPos = self.mapToGlobal(mouseEvent.pos())
         localPos  = self.mapFromGlobal(globalPos)
         if not self.extendedRect.contains(localPos):
@@ -119,7 +124,7 @@ class _IndexColorPicker(QtWidgets.QDialog):
         self.mayaIndextoRGBColor.emit(cmds.colorIndex(self.index, q=True))
         #self.mayaIndexToQtColor.emit(self.indexToQtColor(self.index))
         
-        super(_IndexColorPicker, self).hideEvent(event)
+        super().hideEvent(event)
 
 
 class _GetCmdsRGBColorPicker(QtCore.QObject):
@@ -128,7 +133,7 @@ class _GetCmdsRGBColorPicker(QtCore.QObject):
     mayaRGBToQtColor2  = QtCore.Signal(QtGui.QColor)
 
     def __init__(self, parent=None):
-        super(_GetCmdsRGBColorPicker, self).__init__(parent)
+        super().__init__(parent)
         self.baseColor = [1.0, 1.0, 1.0] 
         self.colorLabel  = None
         
@@ -163,17 +168,17 @@ class _GetCmdsRGBColorPicker(QtCore.QObject):
         
         
     def _getColor(self, *args):
-        color = self.get()
+        color: list = self.get()
         self.mayaRGBColor.emit(color)
         self.mayaRGBToQtColor.emit(self.mayaRGBColorToQtColor(color))
         self.mayaRGBToQtColor2.emit(self.mayaRGBColorToQtColor2(color))
         
     # ---------------------------------------------------------
-    def set(self, color):
+    def set(self, color: list):
         cmds.colorSliderGrp(self._colorSliderFullPathName(), e=True, rgbValue=(color)) # set picker color
         
         
-    def get(self):
+    def get(self) -> list:
         return cmds.colorSliderGrp(self._colorSliderFullPathName(), q=True, rgb=True)
         
 
@@ -181,7 +186,7 @@ class ColorWidget(QtWidgets.QLabel):
     colorSelected = QtCore.Signal(QtGui.QColor)
     
     def __init__(self, x=100, y=30, color=QtGui.QColor(), parent=None):
-        super(ColorWidget, self).__init__(parent)
+        super().__init__(parent)
         
         self.setFixedSize(x, y)
         self._pixmap  = QtGui.QPixmap(self.size()) 
@@ -216,14 +221,14 @@ class ColorWidget(QtWidgets.QLabel):
     
     
     def _createActions(self):
-        self.RGBAction      = QtWidgets.QAction('RGB   Color Picker', self)
-        self.indexAction    = QtWidgets.QAction('Index Color Picker', self)
+        self.RGBAction    = Action('RGB   Color Picker')
+        self.indexAction  = Action('Index Color Picker')
         
         self.RGBAction.setCheckable(True)
         self.indexAction.setCheckable(True)
         self.RGBAction.setChecked(True)
         
-        actionGroup = QtWidgets.QActionGroup(self)
+        actionGroup = ActionGroup(self)
         actionGroup.setExclusive(True)
         actionGroup.addAction(self.RGBAction)
         actionGroup.addAction(self.indexAction)
@@ -235,14 +240,14 @@ class ColorWidget(QtWidgets.QLabel):
         self.colorWidgetMenu.addAction(self.indexAction)
         
         
-    def _setColorMode(self, isRGB):
+    def _setColorMode(self, isRGB: bool):
         self.isRGB = isRGB
      
     def mousePressEvent(self, event):
         if event.buttons() == QtCore.Qt.MouseButton.RightButton and event.modifiers() == QtCore.Qt.NoModifier:
             self.colorWidgetMenu.exec_(event.globalPos())
         else:
-            super(ColorWidget, self).mousePressEvent(event)
+            super().mousePressEvent(event)
         
         
     def mouseReleaseEvent(self, event):
@@ -258,7 +263,7 @@ class ColorWidget(QtWidgets.QLabel):
                 self.indexColorPicker.move(x, y)
                 self.indexColorPicker.show()
         else:
-            super(ColorWidget, self).mouseReleaseEvent(event)
+            super().mouseReleaseEvent(event)
                 
                 
     def _showCmdsRGBColorPicker(self):
@@ -274,10 +279,10 @@ class ColorWidget(QtWidgets.QLabel):
         color = [color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0]
         self.cmdsColorUI.set(color)
         
-    def getColor(self):
+    def getColor(self) -> QtGui.QColor:
         return self.tabColor
         
-    def updateColor(self, color):
+    def updateColor(self, color: QtGui.QColor):
 
         if self.oldColor is None:
             self.oldColor = color
@@ -289,12 +294,8 @@ class ColorWidget(QtWidgets.QLabel):
         self.oldColor = color
         
         
-    def setColor(self, color):
+    def setColor(self, color: QtGui.QColor):
         self.tabColor  = color
         self._pixmap.fill(self.tabColor)
         self.setPixmap(self._pixmap) 
         
-if __name__ == '__main__':
-    c = ColorWidget()
-    c.show()
-                

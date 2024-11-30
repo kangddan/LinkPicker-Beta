@@ -1,10 +1,15 @@
 import maya.cmds as cmds
 
-from PySide2 import QtWidgets
-from PySide2 import QtGui
-from PySide2 import QtCore
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+    Action      = QtGui.QAction
+    ActionGroup = QtGui.QActionGroup 
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
+    Action      = QtWidgets.QAction
+    ActionGroup = QtWidgets.QActionGroup
 
-from linkPicker import config
+from .. import config
 
 
 class PickerMenu(QtWidgets.QMenu):
@@ -36,9 +41,9 @@ class PickerMenu(QtWidgets.QMenu):
     frameSelectionTriggered = QtCore.Signal()
     
     def __init__(self, parent=None):
-        super(PickerMenu, self).__init__(parent)
+        super().__init__(parent)
         self.pickerView = parent
-        self.selectedNodes = [] # List of selected Maya node names
+        self.selectedNodes: 'list[selectedNodeNames]' = []
         self._createActions()
         self._createConnections()
         
@@ -48,32 +53,32 @@ class PickerMenu(QtWidgets.QMenu):
         
         
     def _createActions(self):
-        self.addSingleButtonAction    = QtWidgets.QAction(QtGui.QIcon(':addClip.png'), 'Add Single Button', self)
-        self.addMultipleButtonsAction = QtWidgets.QAction('Add Multiple Buttons',  self)
-        self.updateButtonAction       = QtWidgets.QAction(QtGui.QIcon(':refresh.png'), 'Update Button', self)
-        self.deleteButtonAction       = QtWidgets.QAction(QtGui.QIcon(':delete.png'), 'Delete Selected Button(s)',  self, shortcut='Delete')
+        self.addSingleButtonAction    = Action(QtGui.QIcon(':addClip.png'), 'Add Single Button', self)
+        self.addMultipleButtonsAction = Action('Add Multiple Buttons',  self)
+        self.updateButtonAction       = Action(QtGui.QIcon(':refresh.png'), 'Update Button', self)
+        self.deleteButtonAction       = Action(QtGui.QIcon(':delete.png'), 'Delete Selected Button(s)',  self, shortcut='Delete')
         
-        self.addCommandButtonAction  = QtWidgets.QAction(QtGui.QIcon(config.pythonLogo), 'Add Command Button',  self)
-        self.alignHorizontallyAction = QtWidgets.QAction(QtGui.QIcon(config.alignHorizontallyIcon), 'Align Buttons Horizontally', self)
-        self.alignVerticallyAction   = QtWidgets.QAction(QtGui.QIcon(config.alignVerticallyIcon), 'Align Buttons Vertically',  self)
-        self.distributeButtonsAction = QtWidgets.QAction('Distribute Buttons Evenly', self)
+        self.addCommandButtonAction  = Action(QtGui.QIcon(config.pythonLogo), 'Add Command Button',  self)
+        self.alignHorizontallyAction = Action(QtGui.QIcon(config.alignHorizontallyIcon), 'Align Buttons Horizontally', self)
+        self.alignVerticallyAction   = Action(QtGui.QIcon(config.alignVerticallyIcon), 'Align Buttons Vertically',  self)
+        self.distributeButtonsAction = Action('Distribute Buttons Evenly', self)
         
-        self.mirrorAction  = QtWidgets.QAction(QtGui.QIcon(':teLoopTool.png'), 'Mirror', self)
-        self.reverseAction = QtWidgets.QAction(QtGui.QIcon(':reverseOrder.png'), 'Reverse', self)
+        self.mirrorAction  = Action(QtGui.QIcon(':teLoopTool.png'), 'Mirror', self)
+        self.reverseAction = Action(QtGui.QIcon(':reverseOrder.png'), 'Reverse', self)
             
-        self.raiseButtonAction  = QtWidgets.QAction(QtGui.QIcon(':nodeGrapherArrowUp.png'), 'Bring to Front', self)
-        self.lowerButtonAction  = QtWidgets.QAction(QtGui.QIcon(':nodeGrapherArrowDown.png'), 'Send to Back', self)
-        self.moveForwardAction  = QtWidgets.QAction(QtGui.QIcon(':moveUVUp.png'), 'Move Forward', self, shortcut='Up')
-        self.moveBackwardAction = QtWidgets.QAction(QtGui.QIcon(':moveUVDown.png'), 'Move Backward', self, shortcut='Down')
+        self.raiseButtonAction  = Action(QtGui.QIcon(':nodeGrapherArrowUp.png'), 'Bring to Front', self)
+        self.lowerButtonAction  = Action(QtGui.QIcon(':nodeGrapherArrowDown.png'), 'Send to Back', self)
+        self.moveForwardAction  = Action(QtGui.QIcon(':moveUVUp.png'), 'Move Forward', self, shortcut='Up')
+        self.moveBackwardAction = Action(QtGui.QIcon(':moveUVDown.png'), 'Move Backward', self, shortcut='Down')
         
-        self.increaseSizeAction = QtWidgets.QAction(QtGui.QIcon(':moveUVUpd.png'), 'Increase Size', self, shortcut='+')
-        self.decreaseSizeAction = QtWidgets.QAction(QtGui.QIcon(':moveUVDownd.png'), 'Decrease Size', self, shortcut='-')
+        self.increaseSizeAction = Action(QtGui.QIcon(':moveUVUpd.png'), 'Increase Size', self, shortcut='+')
+        self.decreaseSizeAction = Action(QtGui.QIcon(':moveUVDownd.png'), 'Decrease Size', self, shortcut='-')
         
-        #self.viewModeAction = QtWidgets.QAction('Auto-Center (Beta)', self)
+        #self.viewModeAction = Action('Auto-Center (Beta)', self)
         #self.viewModeAction.setCheckable(True)
         
-        self.frameDefaultAction   = QtWidgets.QAction(QtGui.QIcon(':home.png'), 'Frame Default', self)
-        self.frameSelectionAction = QtWidgets.QAction(QtGui.QIcon(':visible.png'), 'Frame Selection', self, shortcut='F')
+        self.frameDefaultAction   = Action(QtGui.QIcon(':home.png'), 'Frame Default', self)
+        self.frameSelectionAction = Action(QtGui.QIcon(':visible.png'), 'Frame Selection', self, shortcut='F')
 
         self.addAction(self.addSingleButtonAction)
         self.addAction(self.addMultipleButtonsAction)
@@ -145,9 +150,9 @@ class PickerMenu(QtWidgets.QMenu):
         
         
     def _updateActionsState(self):
-        selectedNodes   = cmds.ls(sl=True, fl=True)
-        selectedButtons = self.pickerView.selectedButtons
-        clickedButton   = self.pickerView.clickedButton
+        selectedNodes  : 'list[selectedNodeNames]' = cmds.ls(sl=True, fl=True)
+        selectedButtons: 'list[PickerButton]'      = self.pickerView.selectedButtons
+        clickedButton  : 'PickerButton'            = self.pickerView.clickedButton
         
         isMayaNodeSelected = bool(selectedNodes)
         isButtonSelected   = bool(selectedButtons)
@@ -185,6 +190,6 @@ class PickerMenu(QtWidgets.QMenu):
         self.moveBackwardAction.setEnabled(isButtonSelected)
         
         
-    def getSelectedNodes(self):
+    def getSelectedNodes(self) -> 'list[selectedNodeNames]':
         return self.selectedNodes
               

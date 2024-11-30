@@ -1,22 +1,22 @@
 
-def raiseSelectedButtons(selectedButtons):                    
+def raiseSelectedButtons(selectedButtons: 'list[PickerButton]') -> None:                    
     for button in selectedButtons:
         button.raise_()
              
         
-def lowerSelectedButtons(selectedButtons):
+def lowerSelectedButtons(selectedButtons: 'list[PickerButton]') -> None:
 
     for button in selectedButtons:
         button.lower()
         
         
-def __raiseButtons(selectedButtons):
+def __raiseButtons(selectedButtons: 'list[PickerButton]') -> None:
     for button in selectedButtons:
         button.raise_()
       
         
-def moveSelectedButtonsUp(selectedButtons, 
-                          allButtons):
+def moveSelectedButtonsUp(selectedButtons: 'list[PickerButton]', 
+                          allButtons     : 'list[PickerButton]') -> None:
     if len(allButtons) <= 1 or not selectedButtons:
         return
     for button in reversed(selectedButtons):
@@ -27,8 +27,8 @@ def moveSelectedButtonsUp(selectedButtons,
     __raiseButtons(allButtons)
 
 
-def moveSelectedButtonsDown(selectedButtons, 
-                            allButtons) :
+def moveSelectedButtonsDown(selectedButtons: 'list[PickerButton]', 
+                            allButtons     : 'list[PickerButton]') -> None:
     if len(allButtons) <= 1 or not selectedButtons:
         return
     for button in selectedButtons:

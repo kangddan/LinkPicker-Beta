@@ -1,17 +1,19 @@
-# -*- coding: utf-8 -*-
-from __future__ import division
 import sys
-import importlib
+import json
 import maya.cmds as cmds
 import maya.api.OpenMaya as om2
+from functools import partial
 
-import json
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
 
-from functools  import partial
-from PySide2    import QtWidgets, QtGui, QtCore
-from linkPicker import qtUtils, widgets, colorWidget, toolBoxWidget, config, metaNode, fileManager, mainUIMenu, preferencesWidget
-from linkPicker.pickerViewWidgets import buttonManager, pickerView
-
+from . import (
+    qtUtils, widgets, colorWidget, toolBoxWidget, 
+    config, metaNode, fileManager, mainUIMenu, preferencesWidget
+    )
+from .pickerViewWidgets import buttonManager, pickerView
 
 
 class MainUI(QtWidgets.QWidget):
@@ -22,10 +24,10 @@ class MainUI(QtWidgets.QWidget):
 
     # -----------------------------------------------------------------------------------
     def currentTabUpdateCallback(self):
-        self.updateButtonsSelection(None, autoSwitchTab=False)
+        self.updateButtonsSelection(autoSwitchTab=False)
         
     
-    def updateButtonsSelection(self, _, autoSwitchTab=True):
+    def updateButtonsSelection(self, *args, autoSwitchTab=True):
         
         if pickerView.PickerView.isSelectionviaUiActive():
            return
@@ -62,10 +64,11 @@ class MainUI(QtWidgets.QWidget):
             return
         if not self.autoSwitchTab:
             return
-        currentPicker = self.tabWidget.currentWidget()  
-        if not isinstance(currentPicker, pickerView.PickerView):
+            
+        currentPicker = self.getCurrentPickerView()
+        if currentPicker is None:
             return
- 
+            
         currentAllNodes = {tuple(button.nodes) for button in currentPicker.allPickerButtons}
     
         for button in cacheSelectedButtons:
@@ -79,9 +82,9 @@ class MainUI(QtWidgets.QWidget):
                     return 
                     
 
-    def updateOpenScene(self, _):
+    def updateOpenScene(self, *args):
         # metaNode.mergeNodes().set(self.get())
-        self.deleteAllTab(None)
+        self.deleteAllTab()
         data = metaNode.mergeNodes().get()
         if data:
             self.set(data)
@@ -92,6 +95,7 @@ class MainUI(QtWidgets.QWidget):
             jobMap = {'SelectionChanged': self.updateButtonsSelection,
                       'NewSceneOpened'  : self.deleteAllTab,
                       'SceneOpened'     : self.updateOpenScene}
+            
             for key, value in jobMap.items():
                 jobIndex = om2.MEventMessage.addEventCallback(key, value)
                 MainUI._SCRIPT_JOB_NUMBERS.append(jobIndex)
@@ -101,8 +105,8 @@ class MainUI(QtWidgets.QWidget):
                 for scriptIndex in MainUI._SCRIPT_JOB_NUMBERS:
                     om2.MMessage.removeCallback(scriptIndex)
             except Exception as e:
-                om2.MGlobal.displayWarning('Error removing callback: {}'.format(e))
-            MainUI._SCRIPT_JOB_NUMBERS = []
+                om2.MGlobal.displayWarning(f'Error removing callback: {e}')
+            MainUI._SCRIPT_JOB_NUMBERS.clear()
             
             
     def showEvent(self, event):
@@ -115,7 +119,7 @@ class MainUI(QtWidgets.QWidget):
         if self.GEOMETRY is not None:
             self.restoreGeometry(self.GEOMETRY) 
             
-        super(MainUI, self).showEvent(event)
+        super().showEvent(event)
         self.setScriptJobEnabled(True)
         self.currentTabUpdateCallback()
         
@@ -131,7 +135,7 @@ class MainUI(QtWidgets.QWidget):
         
         self.GEOMETRY = self.saveGeometry()
         if isinstance(self, MainUI):
-            super(MainUI, self).closeEvent(event)
+            super().closeEvent(event)
             self.setScriptJobEnabled(False)
         '''
         If a file is referenced while the picker is open, and the reference file contains pickerNode data,
@@ -145,7 +149,7 @@ class MainUI(QtWidgets.QWidget):
             pickerData.extend(refData)
         
         metaNode.mergeNodes().set(pickerData)
-        self.deleteAllTab(None)
+        self.deleteAllTab()
         
         
     def saveCurrentTabIndex(self):
@@ -164,7 +168,7 @@ class MainUI(QtWidgets.QWidget):
             self.namespaceWidget.show() if width > 400 and self.tabWidget.count() >= 2 else self.namespaceWidget.hide()
         else:
             self.namespaceWidget.hide()
-        super(MainUI, self).resizeEvent(event)    
+        super().resizeEvent(event)    
    
     
     def __new__(cls, *args, **kwargs):
@@ -174,10 +178,10 @@ class MainUI(QtWidgets.QWidget):
 
         
     def __repr__(self):
-        return '< PickerWindow{} Tab -> {} >'.format(self.__class__.__name__, self.tabWidget.count())
+        return f'< PickerWindow{self.__class__.__name__} Tab -> {self.tabWidget.count()} >'
         
     def leaveEvent(self, event):
-        super(MainUI, self).leaveEvent(event)
+        super().leaveEvent(event)
         self.mainWindow.activateWindow()
         
     '''
@@ -195,8 +199,7 @@ class MainUI(QtWidgets.QWidget):
         fileUrls = event.mimeData().urls()
         self.pickerPaths = []
         for fileUrl in fileUrls:
-            #filePath = fileUrl.toLocalFile()
-            filePath = str(fileUrl.toLocalFile())
+            filePath = fileUrl.toLocalFile()
             if not filePath.endswith('.lpk'):
                 continue
             self.pickerPaths.append(filePath)
@@ -210,7 +213,7 @@ class MainUI(QtWidgets.QWidget):
         if self.pickerPaths:
             datas = []
             for pickerPath in self.pickerPaths:
-                with open(pickerPath, 'r', encoding='utf-8') as f:
+                with open(pickerPath, 'r') as f:
                     datas.append(json.load(f))
             self.set(datas)
             
@@ -219,7 +222,7 @@ class MainUI(QtWidgets.QWidget):
         if hasattr(self, '_init') and self._init:
             return
         self._init = True
-        super(MainUI, self).__init__(parent)
+        super().__init__(parent)
         self.mainWindow = parent
         self.setAcceptDrops(True)
         self.setObjectName('PickerWindow')
@@ -250,7 +253,7 @@ class MainUI(QtWidgets.QWidget):
             elif event.key() == QtCore.Qt.Key_Y:
                 self.redo()
         else:
-            super(MainUI, self).keyPressEvent(event)
+            super().keyPressEvent(event)
         
         
     def _createMenu(self):
@@ -288,7 +291,7 @@ class MainUI(QtWidgets.QWidget):
         self.mainMenuBar.newTriggered.connect(self.tabWidget.newTab.emit)
         self.mainMenuBar.openTriggered.connect(lambda: self.fileManager.open())
         self.mainMenuBar.saveTriggered.connect(lambda: self.fileManager.save(self.undoToFile))
-        self.mainMenuBar.saveAsTriggered.connect(lambda: self.fileManager.saveAs())
+        self.mainMenuBar.saveAsTriggered.connect(lambda: self.fileManager.saveAs(self.undoToFile))
         self.mainMenuBar.renameTabTriggered.connect(lambda: self.tabWidget._renameTab(self.tabWidget.currentIndex()))
         self.mainMenuBar.closeTriggered.connect(lambda: self.tabWidget._closeTab(self.tabWidget.currentIndex()))
         #self.mainMenuBar.closeAllTriggered.connect(partial(self.tabWidget._closeAllTab, showWarning=True))
@@ -302,19 +305,27 @@ class MainUI(QtWidgets.QWidget):
         self.mainMenuBar.preferencesTriggered.connect(self._showPreferences)
         
     # ---------------------------------------------------------------------------------------------------    
-    def undo(self):
+    def getCurrentPickerView(self):
         currentPicker = self.tabWidget.currentWidget()
         if not isinstance(currentPicker, pickerView.PickerView):
+            return None
+        return currentPicker
+        
+    def undo(self):
+        currentPicker = self.getCurrentPickerView()
+        if currentPicker is None:
             return
+            
         self.mainMenuBar.setUndoType(currentPicker.undoStack.undoText())
         currentPicker.undo()
 
         
         
     def redo(self):
-        currentPicker = self.tabWidget.currentWidget()
-        if not isinstance(currentPicker, pickerView.PickerView):
+        currentPicker = self.getCurrentPickerView()
+        if currentPicker is None:
             return
+            
         self.mainMenuBar.setRedoType(currentPicker.undoStack.redoText())
         currentPicker.redo()
         
@@ -329,32 +340,34 @@ class MainUI(QtWidgets.QWidget):
         self.midView          = True if data['general']['viewModeComboBox'] == 0 else False
         self.autoSwitchTab    = data['general']['autoSelectedCheckBox']
         self.showToolBox      = data['general']['toolBoxCheckBox']
+        self.showTabBarTag    = data['general']['showTabBarCheckBox']
         self.showNamespaceTag = data['general']['showNamespaceCheckBox']
         
         self.showTabClosewarning = data['general']['closeTabCheckBox']
 
-            
-        
-        
         self.ZoomDrag      = data['general']['ZoomSlider']
         self.undoQueue     = data['settings']['queue']
         self.enableUndo    = data['settings']['undo']
         self.undoToFile    = data['settings']['undoToFile']
         
-
         self.updatePickerTags()
         self.showToolBoxWidget(self.showToolBox)
         self.updateNamespaceWidgetTag(self.tabWidget.count())
         self.setTabWidgetShowCloseWarningTag()
+        
+        if self.showTabBarTag:
+            self.tabWidget.tabBar.show()
+        else:
+            self.tabWidget.tabBar.hide()
 
         
     def updatePickerTags(self):
         allPickerViews = self.tabWidget.getWidget()
         if not allPickerViews: return
         for picker in allPickerViews:
-            picker['ZoomDrag']   = self.ZoomDrag
-            picker['undoQueue']  = self.undoQueue
-            picker['enableUndo'] = self.enableUndo
+            picker.ZoomDrag   = self.ZoomDrag
+            picker.undoQueue  = self.undoQueue
+            picker.enableUndo = self.enableUndo
             picker.setUndoMode(self.enableUndo, self.undoQueue)
             
     def showToolBoxWidget(self, _):
@@ -369,7 +382,7 @@ class MainUI(QtWidgets.QWidget):
         self.tabWidget.showTabClosewarning = self.showTabClosewarning
         
     # ----------------------------------------------------------------------------------------------------
-    def _selectNamespace(self, namespace):
+    def _selectNamespace(self, namespace:str):
         '''
         If the namespaceEditWidget returns an empty string
         meaning the namespace is cleared via the clear button, then attempt to select ':'!!
@@ -399,18 +412,18 @@ class MainUI(QtWidgets.QWidget):
 
         
     def _createNewTab(self, name=None, data=None):
-        pickerViewInstance = pickerView.PickerView(parent = self, 
-                                                  buttonManager = self.buttonManager, 
-                                                  midView       = self.midView,
-                                                  ZoomDrag      = self.ZoomDrag,
-                                                  undoQueue     = self.undoQueue,
-                                                  enableUndo    = self.enableUndo)
+        pickerViewInstance = pickerView.PickerView(parent        = self, 
+                                                                     buttonManager = self.buttonManager, 
+                                                                     midView       = self.midView,
+                                                                     ZoomDrag      = self.ZoomDrag,
+                                                                     undoQueue     = self.undoQueue,
+                                                                     enableUndo    = self.enableUndo)
         
         self.toolBoxWidget.buttonColorLabelSelected.connect(pickerViewInstance.updateButtonsColor)
-        self.toolBoxWidget.scaleXUndo[int].connect(pickerViewInstance.undoButtonsScaleX) # 
+        self.toolBoxWidget.scaleXUndo.connect(pickerViewInstance.undoButtonsScaleX) # 
         
         self.toolBoxWidget.scaleXUpdate.connect(pickerViewInstance.updateButtonsScaleX)
-        self.toolBoxWidget.scaleYUndo[int].connect(pickerViewInstance.undoButtonsScaleY) #
+        self.toolBoxWidget.scaleYUndo.connect(pickerViewInstance.undoButtonsScaleY) #
         self.toolBoxWidget.scaleYUpdate.connect(pickerViewInstance.updateButtonsScaleY)
         
         
@@ -436,11 +449,11 @@ class MainUI(QtWidgets.QWidget):
         data = pickerView.get()
         
         data['cacheSavePath'] = '' # update cacheSavePath
-        self._createNewTab("{} (copy)".format(data['tabName']), data)
+        self._createNewTab(f"{data['tabName']} (copy)", data)
         self.currentTabUpdateCallback()
         
         
-    def deleteAllTab(self, _):
+    def deleteAllTab(self, *args):
         pickerViews = self.tabWidget.getWidget()
         if not pickerViews:
             return
@@ -448,7 +461,7 @@ class MainUI(QtWidgets.QWidget):
         self.tabWidget._closeAllTab(showWarning=False)
             
     
-    def get(self):
+    def get(self) -> list:
         pickerViewsData = []  
         pickerViews = self.tabWidget.getWidget()
         if not pickerViews:
@@ -459,12 +472,9 @@ class MainUI(QtWidgets.QWidget):
         return pickerViewsData
         
         
-    def set(self, data):
+    def set(self, data: list):
         if not data:
             return
         for pickerData in data:
             self._createNewTab(pickerData['tabName'], pickerData)
         self.currentTabUpdateCallback()
-
-if __name__ == '__main__':
-    MainUI().show()

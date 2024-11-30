@@ -1,34 +1,34 @@
-from __future__ import division
+import maya.cmds as cmds
+import maya.api.OpenMaya as om2
+import enum
 
 from functools import partial
 
-from PySide2   import QtWidgets
-from PySide2   import QtGui
-from PySide2   import QtCore
-from maya      import cmds
-from maya.api  import OpenMaya as om2
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
 
 
-from linkPicker import (
+from .. import (
     qtUtils, config, widgets
     )
-    
-from linkPicker.pickerViewWidgets import (
+from . import (
     pickerButton, pickerMenu, pickerUtils, pickerStates,  
     zorder, align, selection, mirror, view, buttonManager, pickerBackground, undo
     ) 
-    
 
 
-
-class PickerEnum(object):
-    NONE = 0
-    MIRROR_BUTTONS = 1
-    ADDING_BUTTONS = 2
-
-    @staticmethod
-    def auto():
-        return len(vars(PickerEnum)) - 1
+class PickerEnum(enum.Enum):
+    NONE = enum.auto()  
+      
+    MIRROR_BUTTONS = enum.auto()
+    ADDING_BUTTONS = enum.auto()  
+      
+    MOVE_VIEW        = enum.auto() 
+    SCALE_VIEW       = enum.auto() 
+    SELECTED_BUTTONS = enum.auto()  
+    MOVE_BUTTONS     = enum.auto()
       
 
 class PickerView(QtWidgets.QWidget):
@@ -51,7 +51,7 @@ class PickerView(QtWidgets.QWidget):
                        undoQueue     = 20,
                        enableUndo    = True):
                         
-        super(PickerView, self).__init__(parent)
+        super().__init__(parent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True) 
         self.setObjectName('PickerView')
@@ -144,7 +144,7 @@ class PickerView(QtWidgets.QWidget):
         if isinstance(attr, str):
             if attr in self.__dict__:
                 return self.__dict__[attr]
-            raise KeyError("Key '{}' not found in object attributes.".format(attr))
+            raise KeyError(f"Key '{attr}' not found in object attributes.")
             
     def __setitem__(self, attr, value):
         self.__setattr__(attr, value)
@@ -158,7 +158,18 @@ class PickerView(QtWidgets.QWidget):
     def _createWidgets(self):
         self.parentAxis   = widgets.AxisWidget(self); self.parentAxis.hide()
         self.selectionBox = widgets.SelectionBox(parent=self)
-
+        
+        # -----------------------------------------------------
+        # self.undoButton = QtWidgets.QPushButton(self)
+        # self.redoButton = QtWidgets.QPushButton(self)
+        # self.undoButton.move(200, 0)
+        # self.redoButton.move(250, 0)
+        
+        # self.undoButton.setIcon(QtGui.QIcon(':undo_s.png'))
+        # self.redoButton.setIcon(QtGui.QIcon(':redo_s.png'))
+        
+        # self.undoButton.clicked.connect(self.undo)
+        # self.redoButton.clicked.connect(self.redo)
         
     def undo(self):
         if self.undoStack.canUndo():
@@ -214,10 +225,10 @@ class PickerView(QtWidgets.QWidget):
         elif event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
             self._deleteSelectedButton()
         else:
-            super(PickerView, self).keyPressEvent(event)
+            super().keyPressEvent(event)
          
          
-    def _adjustSelectionScale(self, adjustment):
+    def _adjustSelectionScale(self, adjustment: int):
         self.undoStack.push(undo.UpdateSelectedButtonsScaleCmd(self).initialize(adjustment))
         self.buttonManager.updateToolBoxWidget(self.selectedButtons[-1]) # update toolbox   
     
@@ -246,9 +257,12 @@ class PickerView(QtWidgets.QWidget):
         
     # update button ------------------------------------------------------------------- 
         
-    def updateButtonsNamespace(self, namespace):
+    def updateButtonsNamespace(self, namespace: str):
         if self.isActiveTab: 
             self.undoStack.push(undo.UpdateButtonsNamespaceCmd(self).initialize(namespace))
+            # self.namespace = namespace
+            # for button in self.allPickerButtons:
+            #     button.updateNamespace(namespace)
     
     
     # delete button -------------------------------------------------------------------  
@@ -267,7 +281,9 @@ class PickerView(QtWidgets.QWidget):
     def _deleteSelectedButton(self):
         self.undoStack.push(undo.DeleteButtonCmd(self).initialize())
         
-      
+    # delete button -------------------------------------------------------------------        
+        
+        
     # zoreder ----------------------------------------------------------    
     def _raiseSelectedButtons(self):
         self.undoStack.push(undo.RaiseCmd(self).initialize())
@@ -282,38 +298,38 @@ class PickerView(QtWidgets.QWidget):
         self.undoStack.push(undo.DownCmd(self).initialize())
             
     # ------------------------------------------------------------------
-    def getAllPickerButtons(self):
+    def getAllPickerButtons(self) -> 'list[pickerButton.PickerButton]':
         return self.findChildren(pickerButton.PickerButton) 
         
         
-    def getMaxPickerButtons(self):
+    def getMaxPickerButtons(self) -> 'list[pickerButton.PickerButton]':
         return [button for button in self.getAllPickerButtons() if button.isMaxButton]
         
         
-    def getNonMaxPickerButtons(self):
+    def getNonMaxPickerButtons(self) -> 'list[pickerButton.PickerButton]':
         return [button for button in self.getAllPickerButtons() if not button.isMaxButton]
         
         
     def clearSelectedButtons(self):
         for button in self.selectedButtons:
             button.setSelected(False)
-        self.selectedButtons = []
+        self.selectedButtons.clear()  
     
     # ------------------------------------------------------------------
     @property
-    def isActiveTab(self):
+    def isActiveTab(self) -> bool:
         return self.mainUI.tabWidget.currentWidget() == self
-
+        #return self.parent().currentWidget() == self
         
-    def updateButtonsColor(self, color):
+    def updateButtonsColor(self, color: QtGui.QColor):
         if self.isActiveTab:  
             self.undoStack.push(undo.UpdateButtonsColorCmd(self).initialize(color))
             
-    def updateButtonsTextColor(self, color):
+    def updateButtonsTextColor(self, color: QtGui.QColor):
         if self.isActiveTab:
             self.undoStack.push(undo.UpdateButtonsTextColorCmd(self).initialize(color))
             
-    def updateButtonsText(self, text):
+    def updateButtonsText(self, text: str):
         if self.isActiveTab:
             self.undoStack.push(undo.UpdateButtonsTextCmd(self).initialize(text))
     
@@ -333,7 +349,7 @@ class PickerView(QtWidgets.QWidget):
             buttonsMap[buttonId].append([newLocalPos.x(), newLocalPos.y()])
         
      
-    def updateButtonsScaleX(self, value):
+    def updateButtonsScaleX(self, value: int):
         if not (self.isActiveTab and self.selectedButtons):
             return
         # 1 get buttons old localPos and old scaleX
@@ -357,7 +373,7 @@ class PickerView(QtWidgets.QWidget):
 
     # ---------------------------------------------------------------------------------------    
         
-    def updateButtonsScaleY(self, value):
+    def updateButtonsScaleY(self, value: int):
         if not (self.isActiveTab and self.selectedButtons):
             return
         # 1 get buttons old localPos and old scaleY
@@ -381,7 +397,7 @@ class PickerView(QtWidgets.QWidget):
         
     # ---------------------------------------------------------------------------------------    
 
-    def createButton(self, nodeList, data=None, buttonId=None):
+    def createButton(self, nodeList:list, data: dict=None, buttonId: str=None):
         button = self.buttonManager.create(self.buttonGlobalPos, 
                                            self.buttonsParentPos, 
                                            self.sceneScale, 
@@ -405,12 +421,12 @@ class PickerView(QtWidgets.QWidget):
 
 
     def updateAddingButtons(self):
-        self.setCursor(QtGui.QCursor(':leftArrowPlus.png'))
+        self.setCursor(QtGui.QCursor(QtGui.QPixmap(':leftArrowPlus.png')))
         self.pickerViewEnum = PickerEnum.ADDING_BUTTONS
         
         
     def createMultipleButtons(self):
-        nodeList = self.pickerViewMenu.getSelectedNodes()
+        nodeList:'list[MayaNodeName]' = self.pickerViewMenu.getSelectedNodes()
         self.trackedButtons = [self.createButton([node]) for node in nodeList]
             
          
@@ -436,7 +452,7 @@ class PickerView(QtWidgets.QWidget):
         self.sceneScale = 1.0
         self.origScale  = 1.0
         self.clickedParentPos = QtCore.QPointF()
-        self.buttonsParentPos = QtCore.QPointF() if not self.midView else QtCore.QPointF(self.width() / 2.0, self.height() / 2.0)
+        self.buttonsParentPos = QtCore.QPointF() if not self.midView else QtCore.QPointF(self.width() / 2, self.height() / 2)
         
         self.parentAxis.move(self.buttonsParentPos.toPoint())
         self.parentAxis.resize(100, 100) 
@@ -525,7 +541,7 @@ class PickerView(QtWidgets.QWidget):
             self.setPickerState(pickerStates.MoveButtonsState, event)
             
         else:
-            super(PickerView, self).mousePressEvent(event)
+            super().mousePressEvent(event)
         
         
     def mouseMoveEvent(self, event):
@@ -533,7 +549,7 @@ class PickerView(QtWidgets.QWidget):
             self.update() 
             self.pickerState.handleMoveEvent(event, self)           
         else:     
-            super(PickerView, self).mouseMoveEvent(event)
+            super().mouseMoveEvent(event)
             
  
     def mouseReleaseEvent(self, event):
@@ -567,13 +583,13 @@ class PickerView(QtWidgets.QWidget):
         
         # update sub menu
         self.pickerViewMenu._updateZOrder()
-        super(PickerView, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
     
         
     def resizeEvent(self, event):
         if not self.frameMoveTag:
             self.frameMoveTag = True
-        super(PickerView, self).resizeEvent(event)
+        super().resizeEvent(event)
         if self.midView:
             try:
                 newOrigPos = QtCore.QPointF(self.width() / 2, self.height() / 2)
@@ -584,7 +600,7 @@ class PickerView(QtWidgets.QWidget):
                 self.updateMidViewOffset()
                 self.updateButtonsPos(updateScale=False)
             except Exception as e:
-                om2.MGlobal.displayWarning('Error during resize: {}'.format(e))
+                om2.MGlobal.displayWarning(f'Error during resize: {e}')
  
  
     def wheelEvent(self, event):  
@@ -596,7 +612,10 @@ class PickerView(QtWidgets.QWidget):
         self.sceneScale = max(0.20, min(self.origScale + offset, 10.0))
         
         _scale = self.sceneScale / self.origScale
-        cx, cy = event.pos().x(), event.pos().y()
+        
+        pos = event.position() if int(cmds.about(version=True)) >= 2025 else event.pos()
+        cx, cy = pos.x(), pos.y()
+        
         self.buttonsParentPos = QtCore.QPointF(cx + _scale * (self.buttonsParentPos.x() - cx), 
                                                cy + _scale * (self.buttonsParentPos.y() - cy))
                                                
@@ -641,7 +660,7 @@ class PickerView(QtWidgets.QWidget):
 
           
     def updateMirrorButtons(self):
-        self.setCursor(QtGui.QCursor(':cursor_trim.png'))    
+        self.setCursor(QtGui.QCursor(QtGui.QPixmap(':cursor_trim.png')))      
         self.pickerViewEnum = PickerEnum.MIRROR_BUTTONS
         
         
@@ -649,6 +668,7 @@ class PickerView(QtWidgets.QWidget):
         self.undoStack.push(undo.ReverseSelectionCmd(self).initialize())
         
     
+    # ------------------------------------------------------------------------------------------
     def updateMidViewOffset(self):
         self.viewOffset = self.buttonsParentPos - QtCore.QPointF(self.width() / 2, self.height() / 2)
         
@@ -665,7 +685,7 @@ class PickerView(QtWidgets.QWidget):
 
         self.updateMidViewOffset()
         
-
+    #------------------------------------------------------------------
     def toMaxView(self):     
         self.toOrigView(10.0)
         
@@ -674,7 +694,7 @@ class PickerView(QtWidgets.QWidget):
         self.sceneScale = self.origScale = sceneScale
         self.updateButtonsPos(updateScale=True)
         
-    def getTabName(self):
+    def getTabName(self) -> str:
         stackedWidget = self.parent()
         if not isinstance(stackedWidget, QtWidgets.QStackedWidget):
             return 'Null'
@@ -682,14 +702,15 @@ class PickerView(QtWidgets.QWidget):
         index     = stackedWidget.indexOf(self)
         tabWidget = stackedWidget.parent()
         return tabWidget.tabText(index)
-
+    
+    # ------------------------------------------------------
     @staticmethod    
     def toUndoClass(className, pickerView, data):
         undoCls = getattr(undo, className, None)
         if undoCls is None:
             raise NameError(
-                "Class '{}' not found in module '{}'. "
-                "Please ensure the class name is correct and the module is properly imported.".format(className, undo.__name__))
+                f"Class '{className}' not found in module '{undo.__name__}'. "
+                "Please ensure the class name is correct and the module is properly imported.")
         undoInstance = undoCls(pickerView, True)
         undoInstance.set(data)
         return undoInstance
@@ -713,7 +734,7 @@ class PickerView(QtWidgets.QWidget):
             self.undoStack.setIndex(data['undos']['index'])
 
     # ------------------------------------------------------
-    def get(self, undoToFile=True):
+    def get(self, undoToFile=True) -> dict:
         
         origSceneScale = self.sceneScale
         '''
@@ -721,6 +742,7 @@ class PickerView(QtWidgets.QWidget):
         While this may not be the most elegant approach
         it effectively resolves the issue of precision loss :)
         '''
+        #self.toMaxView() 
         
         data = {'tabName'         : self.getTabName(),
                 'origSceneScale'  : origSceneScale,
@@ -761,12 +783,13 @@ class PickerView(QtWidgets.QWidget):
         Revert to the view before zooming
         mainly to keep the original tab's view unchanged when duplicating a tab
         '''
+        #self.toOrigView(origSceneScale)
         # get undo data
         data['undos'] = self.getUndoData(undoToFile)
         return data
     
         
-    def set(self, data):
+    def set(self, data: dict):
         try:
             self.namespace = data['namespace']
             self.cacheSavePath = data['cacheSavePath']
@@ -801,19 +824,17 @@ class PickerView(QtWidgets.QWidget):
                 
             self.viewOffset = QtCore.QPointF(*data['viewOffset'])
             self.midView    = data['midView']
+            #self.pickerViewMenu.setViewMode(self.midView)
             if self.midView:
                 self.resizeEvent(QtGui.QResizeEvent(self.size(), self.size()))
-
+            
+            # Restore to the original scale !!!
+            #self.toOrigView(data['origSceneScale'])
+            
+            # set undo
             self.setUndoData(data)
             
         except Exception as e:
-            raise ValueError('Error processing button data: {}'.format(e))
+            raise ValueError(f'Error processing button data: {e}')
         self.updateButtonsPos(True)
-            
-
-
-    
-
-
-
-    
+              

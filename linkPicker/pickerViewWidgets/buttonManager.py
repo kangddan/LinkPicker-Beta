@@ -1,17 +1,21 @@
 import uuid
-from linkPicker.pickerViewWidgets import pickerButton
-from PySide2 import QtCore
-from PySide2 import QtWidgets
-from PySide2 import QtGui
+import maya.cmds as cmds
+
+from . import pickerButton
+
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
 
 
 class ButtonManager(object):
     
-    def __init__(self, toolBoxWidget=None):
+    def __init__(self, toolBoxWidget:'ToolBoxWidget' = None):
         self.toolBoxWidget = toolBoxWidget
         
     
-    def getToolBoxInfo(self):
+    def getToolBoxInfo(self) -> dict:
         if self.toolBoxWidget is None:
             return {'color'    :QtGui.QColor(QtCore.Qt.yellow),
                     'scaleX'   :40,
@@ -23,13 +27,13 @@ class ButtonManager(object):
         return data
         
         
-    def create(self, buttonGlobalPos, 
-                     buttonsParentPos, 
-                     sceneScale,
-                     nodeList,
-                     parent = None,
-                     data = None ,
-                     buttonId = None):
+    def create(self, buttonGlobalPos : QtCore.QPointF, 
+                     buttonsParentPos: QtCore.QPointF, 
+                     sceneScale      : float,
+                     nodeList        : 'list[MayaNodeName]',
+                     parent          : 'PickerView' = None,
+                     data            : dict = None ,
+                     buttonId        : str  = None) -> pickerButton.PickerButton:
                         
         data           = data or self.getToolBoxInfo()
         buttonColor    = data['color']
@@ -55,5 +59,4 @@ class ButtonManager(object):
         if self.toolBoxWidget is None:
             return
         self.toolBoxWidget.set(selectedButton.get())
-            
-        
+                

@@ -3,9 +3,10 @@
         "showNamespaceCheckBox": true,
         "autoSelectedCheckBox": true,
         "closeTabCheckBox": false,
+        "showTabBarCheckBox": true,
         "toolBoxCheckBox": true,
-        "viewModeComboBox": 2,
-        "ZoomSlider": 33
+        "viewModeComboBox": 0,
+        "ZoomSlider": 25
     },
     "settings": {
         "undo": true,

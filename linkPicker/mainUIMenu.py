@@ -1,10 +1,13 @@
 import maya.cmds as cmds
 
-from PySide2 import QtWidgets
-from PySide2 import QtGui
-from PySide2 import QtCore
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtWidgets, QtCore, QtGui
+    Action = QtGui.QAction
+else:
+    from PySide2 import QtWidgets, QtCore, QtGui
+    Action  = QtWidgets.QAction
 
-from linkPicker import config
+from . import config
 
 class MainMenu(QtWidgets.QMenuBar):
     
@@ -31,7 +34,7 @@ class MainMenu(QtWidgets.QMenuBar):
     aboutTriggered       = QtCore.Signal()
     
     def __init__(self, parent=None):
-        super(MainMenu, self).__init__(parent)
+        super().__init__(parent)
         self.mainUI = parent
         self._createActions()
         self._createConnections()
@@ -49,29 +52,29 @@ class MainMenu(QtWidgets.QMenuBar):
         self.addMenu(self.editMenu)
         self.addMenu(self.helpMenu)
         
-        self.newAction        = QtWidgets.QAction(QtGui.QIcon(':fileNew.png'), 'New...',   self.fileMenu, shortcut='Ctrl+N')
-        self.openAction       = QtWidgets.QAction(QtGui.QIcon(':fileOpen.png'), 'Open...', self.fileMenu, shortcut='Ctrl+O')
-        self.saveAction       = QtWidgets.QAction(QtGui.QIcon(':fileSave.png'), 'Save',    self.fileMenu, shortcut='Ctrl+S')
-        self.saveAsAction     = QtWidgets.QAction('Save as...', self.fileMenu, shortcut='Ctrl+Shift+S')
-        self.renameTabAction  = QtWidgets.QAction(QtGui.QIcon(':renamePreset.png'), 'Rename Tab',    self.fileMenu)
-        self.closeAction      = QtWidgets.QAction(QtGui.QIcon(':nodeGrapherClose.png'), 'Close Tab', self.fileMenu)
-        #self.closeAllAction   = QtWidgets.QAction('Close All Tab', self.fileMenu)
-        self.quatPickerAction = QtWidgets.QAction(QtGui.QIcon(':enabled.png'), 'Quit Picker', self.fileMenu, shortcut='Alt+F4')
+        self.newAction        = Action(QtGui.QIcon(':fileNew.png'), 'New...',   self.fileMenu, shortcut='Ctrl+N')
+        self.openAction       = Action(QtGui.QIcon(':fileOpen.png'), 'Open...', self.fileMenu, shortcut='Ctrl+O')
+        self.saveAction       = Action(QtGui.QIcon(':fileSave.png'), 'Save',    self.fileMenu, shortcut='Ctrl+S')
+        self.saveAsAction     = Action('Save as...', self.fileMenu, shortcut='Ctrl+Shift+S')
+        self.renameTabAction  = Action(QtGui.QIcon(':renamePreset.png'), 'Rename Tab',    self.fileMenu)
+        self.closeAction      = Action(QtGui.QIcon(':nodeGrapherClose.png'), 'Close Tab', self.fileMenu)
+        #self.closeAllAction   = Action('Close All Tab', self.fileMenu)
+        self.quatPickerAction = Action(QtGui.QIcon(':enabled.png'), 'Quit Picker', self.fileMenu, shortcut='Alt+F4')
 
-        self.undoAction   = QtWidgets.QAction(QtGui.QIcon(':undo_s.png'), 'Undo ', self.editMenu, shortcut='Ctrl+Z')
-        self.redoAction   = QtWidgets.QAction(QtGui.QIcon(':redo_s.png'), 'Redo ', self.editMenu, shortcut='Ctrl+Y')
-        #self.cutAction    = QtWidgets.QAction('Cut', self.editMenu, shortcut='Ctrl+X')
-        #self.copyAction   = QtWidgets.QAction(QtGui.QIcon(':polyCopyUV.png'), 'Copy',   self.editMenu, shortcut='Ctrl+C')
-        #self.pasteAction  = QtWidgets.QAction(QtGui.QIcon(':polyPasteUV.png'), 'Paste', self.editMenu, shortcut='Ctrl+V')
-        self.changeBackgroundAction = QtWidgets.QAction(QtGui.QIcon(config.backgroundIcon), 'Change Background', self.editMenu)
-        self.resizeBackgroundAction = QtWidgets.QAction('Resize Background', self.editMenu)
-        self.changeNamespaceAction  = QtWidgets.QAction('Change Namespace',  self.editMenu)
-        # self.ToolAction = QtWidgets.QAction('Show ToolBox', self.editMenu)
+        self.undoAction   = Action(QtGui.QIcon(':undo_s.png'), 'Undo ', self.editMenu, shortcut='Ctrl+Z')
+        self.redoAction   = Action(QtGui.QIcon(':redo_s.png'), 'Redo ', self.editMenu, shortcut='Ctrl+Y')
+        #self.cutAction    = Action('Cut', self.editMenu, shortcut='Ctrl+X')
+        #self.copyAction   = Action(QtGui.QIcon(':polyCopyUV.png'), 'Copy',   self.editMenu, shortcut='Ctrl+C')
+        #self.pasteAction  = Action(QtGui.QIcon(':polyPasteUV.png'), 'Paste', self.editMenu, shortcut='Ctrl+V')
+        self.changeBackgroundAction = Action(QtGui.QIcon(config.backgroundIcon), 'Change Background', self.editMenu)
+        self.resizeBackgroundAction = Action('Resize Background', self.editMenu)
+        self.changeNamespaceAction  = Action('Change Namespace',  self.editMenu)
+        # self.ToolAction = Action('Show ToolBox', self.editMenu)
         # self.ToolAction.setCheckable(True)
         # self.ToolAction.setChecked(True)
-        self.preferencesAction = QtWidgets.QAction(QtGui.QIcon(':advancedSettings.png'),'Preferences...',  self.editMenu, shortcut='Ctrl+E')
+        self.preferencesAction = Action(QtGui.QIcon(':advancedSettings.png'),'Preferences...',  self.editMenu, shortcut='Ctrl+E')
         
-        self.aboutAction = QtWidgets.QAction(QtGui.QIcon(':help.png'), 'About Link Picker', self.helpMenu)
+        self.aboutAction = Action(QtGui.QIcon(':help.png'), 'About Link Picker', self.helpMenu)
 
         self.fileMenu.addAction(self.newAction)
         self.fileMenu.addAction(self.openAction)

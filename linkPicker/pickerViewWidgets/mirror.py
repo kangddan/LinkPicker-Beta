@@ -1,13 +1,16 @@
-from __future__ import division
 import maya.cmds as cmds
 
-from PySide2 import QtCore
-from linkPicker.pickerViewWidgets import pickerUtils
+if int(cmds.about(version=True)) >= 2025:
+    from PySide6 import QtCore
+else:
+    from PySide2 import QtCore
+
+from . import pickerUtils
 
 
-def reversePosition(selectedButtons, 
-                    buttonsParentPos, 
-                    sceneScale):
+def reversePosition(selectedButtons : 'list[PickerButton]', 
+                    buttonsParentPos: QtCore.QPointF, 
+                    sceneScale      : float):
     
     reverseCenterPos = [button.cenrerPos(
                         pickerUtils.localToGlobal(button.localPos, buttonsParentPos, sceneScale)) 
@@ -20,8 +23,7 @@ def reversePosition(selectedButtons,
         button.updateLocalPos(globalTopLeftPos, buttonsParentPos, sceneScale)
         
 
-
-def findMirrorObjName(origName):
+def findMirrorObjName(origName: str) -> str:
     leftMarkers  = ['L_', '_L', 'left', 'Left', 'lt_', '_lt']
     rightMarkers = ['R_', '_R', 'right', 'Right', 'rt_', '_rt']
     
@@ -37,6 +39,8 @@ def findMirrorObjName(origName):
     return newName if newName and cmds.objExists(newName) else origName
         
   
-def getMirrorObjs(nodeList):
-    
+def getMirrorObjs(nodeList: 'list[MayaNodeName]') -> 'list[MayaNodeName]':
     return [findMirrorObjName(node) for node in nodeList]
+    
+
+
