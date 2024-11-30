@@ -17,6 +17,33 @@ else:
     ActionGroup = QtWidgets.QActionGroup
 
 
+class RainbowButton(QtWidgets.QPushButton):
+    
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        
+        painter = QtGui.QPainter(self)
+        gradient = QtGui.QLinearGradient(7, 24, 43, 24)
+        
+        colors = [
+            QtGui.QColor(255, 0, 0),    
+            QtGui.QColor(255, 165, 0), 
+            QtGui.QColor(255, 255, 0), 
+            QtGui.QColor(0, 255, 0),  
+            QtGui.QColor(0, 127, 255), 
+            QtGui.QColor(75, 0, 130), 
+            QtGui.QColor(148, 0, 211)]
+        
+        for i, color in enumerate(colors):
+            gradient.setColorAt(i / (len(colors) - 1), color)
+        
+        brush = QtGui.QBrush(gradient)
+        painter.setBrush(brush)
+        painter.setPen(QtCore.Qt.NoPen)
+        rect = QtCore.QRectF(6, 37, 33, 3)
+        painter.drawRect(rect)
+
+   
 class _IndexColorPicker(QtWidgets.QDialog):
     mayaIndexColor      = QtCore.Signal(int)
     mayaIndextoRGBColor = QtCore.Signal(list)
@@ -47,7 +74,10 @@ class _IndexColorPicker(QtWidgets.QDialog):
 
         self.buttons = []
         for index, color in enumerate(colors):
-            button = QtWidgets.QPushButton(f'{index}' if index != 0 else 'Rnd')
+            if index == 0:
+                button = RainbowButton('Rnd')
+            else:
+                button = QtWidgets.QPushButton(str(index))
             button.setFixedSize(45, 45)
             self._setButColor(button, color)
             self.buttonGroup.addButton(button, index)
@@ -298,12 +328,3 @@ class ColorWidget(QtWidgets.QLabel):
         self.tabColor  = color
         self._pixmap.fill(self.tabColor)
         self.setPixmap(self._pixmap) 
-        
-if __name__ == '__main__':
-
-    window = ColorWidget()
-    window.show()
-
-
-        
-            
