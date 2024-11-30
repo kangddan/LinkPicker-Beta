@@ -1,3 +1,4 @@
+import random
 import maya.cmds         as cmds
 import maya.api.OpenMaya as om2
 import maya.OpenMayaUI   as omui
@@ -46,7 +47,7 @@ class _IndexColorPicker(QtWidgets.QDialog):
 
         self.buttons = []
         for index, color in enumerate(colors):
-            button = QtWidgets.QPushButton(f'{index}' if index != 0 else 'RST')
+            button = QtWidgets.QPushButton(f'{index}' if index != 0 else 'Rnd')
             button.setFixedSize(45, 45)
             self._setButColor(button, color)
             self.buttonGroup.addButton(button, index)
@@ -82,10 +83,9 @@ class _IndexColorPicker(QtWidgets.QDialog):
         
         
     def _getColor(self, button):
-        index = self.buttonGroup.id(button) 
-        if index == 0:
-            return
-        self.index = index
+        index = self.buttonGroup.id(button)   
+        self.index = random.randint(1, 31) if index == 0 else index
+        
         self.mayaIndexColor.emit(self.index)
         self.mayaIndextoRGBColor.emit(cmds.colorIndex(self.index, q=True))
         self.mayaIndexToQtColor.emit(self.indexToQtColor(self.index))
@@ -299,3 +299,11 @@ class ColorWidget(QtWidgets.QLabel):
         self._pixmap.fill(self.tabColor)
         self.setPixmap(self._pixmap) 
         
+if __name__ == '__main__':
+
+    window = ColorWidget()
+    window.show()
+
+
+        
+            
