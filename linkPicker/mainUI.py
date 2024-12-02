@@ -107,15 +107,15 @@ class MainUI(QtWidgets.QWidget):
             
     
     def showEvent(self, event):
-        if self.isMinimized(): 
-            event.ignore() 
+        if not self.isFirstShow:
             return
+        self.isFirstShow = False
         
         self.namespaceWidget.updateNamespace() # update namespace
         
         if self.GEOMETRY is not None:
             self.restoreGeometry(self.GEOMETRY) 
-            
+   
         super().showEvent(event)
         self.setScriptJobEnabled(True)
         self.currentTabUpdateCallback()
@@ -128,6 +128,8 @@ class MainUI(QtWidgets.QWidget):
         
         
     def closeEvent(self, event):
+        self.isFirstShow = True
+        
         self.saveCurrentTabIndex()
         
         self.GEOMETRY = self.saveGeometry()
@@ -171,6 +173,10 @@ class MainUI(QtWidgets.QWidget):
     def __new__(cls, *args, **kwargs):
         if cls._INSTANCE is None:
             cls._INSTANCE = super(MainUI, cls).__new__(cls)
+            return cls._INSTANCE
+            
+        if cls._INSTANCE.isMinimized():
+            cls._INSTANCE.showNormal()
         return cls._INSTANCE
 
         
@@ -218,7 +224,10 @@ class MainUI(QtWidgets.QWidget):
     def __init__(self, parent=qtUtils.getMayaMainWindow()):
         if hasattr(self, '_init') and self._init:
             return
-        self._init = True
+        self._init = True    
+        
+        self.isFirstShow = True
+        
         super().__init__(parent)
         self.mainWindow = parent
         self.setAcceptDrops(True)
