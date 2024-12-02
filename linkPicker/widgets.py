@@ -76,6 +76,28 @@ class MyTabBar(QtWidgets.QTabBar):
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        
+class TabNameDialog(QtWidgets.QInputDialog):
+    def __init__(self, parent=None, currentName=''):
+        super().__init__(parent)
+
+        self.setWindowTitle('Tab Name')
+        self.setLabelText('New Name')
+        self.setTextValue(currentName)
+        self.setInputMode(QtWidgets.QInputDialog.TextInput)
+        self.setTextEchoMode(QtWidgets.QLineEdit.Normal)
+
+        self.lineEdit = self.findChild(QtWidgets.QLineEdit)
+        if self.lineEdit:
+            self.lineEdit.textChanged.connect(self.validateInput)
+
+    def validateInput(self, text):
+        if '*' in text:
+            cursorPos = self.lineEdit.cursorPosition()
+            text = text.replace('*', '')
+            self.lineEdit.setText(text)
+            self.lineEdit.setCursorPosition(cursorPos - 1)
+        
     
 class MyTabWidget(QtWidgets.QTabWidget):
     newTab     = QtCore.Signal()
@@ -311,9 +333,16 @@ class MyTabWidget(QtWidgets.QTabWidget):
         if self.count() == 1:
             return
         currentName = self.tabText(index)
-        newName, isOk = QtWidgets.QInputDialog.getText(self, 'Tab Name', 'New Name', QtWidgets.QLineEdit.Normal, currentName)
-        if isOk and newName and newName != currentName:
-            self.setTabText(index, newName)
+        if currentName[-1] == '*':
+            currentName = currentName[:-1]
+            
+        # newName, isOk = QtWidgets.QInputDialog.getText(self, 'Tab Name', 'New Name', QtWidgets.QLineEdit.Normal, currentName)
+        # if isOk and newName and newName != currentName:
+        #     self.setTabText(index, f'{newName}*')
+        nameDialog = TabNameDialog(self, currentName)
+        if nameDialog.exec() == QtWidgets.QDialog.Accepted:
+            newName = nameDialog.textValue()
+            self.setTabText(index, f'{newName}*')
             
             
     def _duplicateTab(self):
@@ -322,7 +351,8 @@ class MyTabWidget(QtWidgets.QTabWidget):
 
     def _getNextName(self) -> str:
         prefix = 'Untitled '
-        items  = [self.tabText(i) for i in range(self.count())]
+        items = [name[:-1] if name and name[-1] == '*' else name for name in [self.tabText(i) for i in range(self.count())]]
+        
         suffixNumbers = []
         
         for item in items:
@@ -705,3 +735,4 @@ class NamespaceWidget(QtWidgets.QWidget):
         else:
             self.hide()
             
+    

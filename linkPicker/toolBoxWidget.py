@@ -7,7 +7,6 @@ else:
 from linkPicker import colorWidget, widgets
 
 
-
 class ToolBoxWidget(QtWidgets.QWidget):
     
     buttonColorLabelSelected = QtCore.Signal(QtGui.QColor)

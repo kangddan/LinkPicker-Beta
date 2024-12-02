@@ -83,9 +83,14 @@ class FileManager(object):
         
     def _saveToFile(self, data, filePath):
         try:
+            tabName = data['tabName']
+            if tabName[-1] == '*':
+                data['tabName'] = tabName[:-1]
+                
             with open(filePath, 'w') as f:
                 json.dump(data, f, indent=4)
             om2.MGlobal.displayInfo(f'File saved successfully to: {filePath}')
+            self.parent.unflagUnsavedTab()
         except IOError as e:
             om2.MGlobal.displayError(f'Error occurred while saving the file: {filePath}. Error: {e}')
    

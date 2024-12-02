@@ -9,11 +9,8 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from . import (
-    qtUtils, widgets, colorWidget, toolBoxWidget, 
-    config, metaNode, fileManager, mainUIMenu, preferencesWidget
-    )
-from .pickerViewWidgets import buttonManager, pickerView
+from linkPicker import qtUtils, widgets, colorWidget, toolBoxWidget, config, metaNode, fileManager, mainUIMenu, preferencesWidget
+from linkPicker.pickerViewWidgets import buttonManager, pickerView
 
 
 class MainUI(QtWidgets.QWidget):
@@ -103,12 +100,12 @@ class MainUI(QtWidgets.QWidget):
         elif not enabled and MainUI._SCRIPT_JOB_NUMBERS:
             try:
                 for scriptIndex in MainUI._SCRIPT_JOB_NUMBERS:
-                    om2.MMessage.removeCallback(scriptIndex)
+                    cmds.evalDeferred(f'om2.MMessage.removeCallback({scriptIndex})')
             except Exception as e:
                 om2.MGlobal.displayWarning(f'Error removing callback: {e}')
             MainUI._SCRIPT_JOB_NUMBERS.clear()
             
-            
+    
     def showEvent(self, event):
         if self.isMinimized(): 
             event.ignore() 
@@ -409,15 +406,38 @@ class MainUI(QtWidgets.QWidget):
             return
 
         self._selectNamespace(picker.namespace)
-
+    
+    
+    def flagUnsavedTab(self):
+        pickerInstance = self.tabWidget.currentWidget() 
+        if not isinstance(pickerInstance, pickerView.PickerView):
+            return
+        
+        tabIndex = self.tabWidget.indexOf(pickerInstance)
+        oldName = self.tabWidget.tabText(tabIndex) 
+        if oldName[-1] != '*':
+            self.tabWidget.setTabText(tabIndex, f'{oldName}*')
+            
+    def unflagUnsavedTab(self):
+        pickerInstance = self.tabWidget.currentWidget() 
+        if not isinstance(pickerInstance, pickerView.PickerView):
+            return
+            
+        tabIndex = self.tabWidget.indexOf(pickerInstance)
+        oldName  = self.tabWidget.tabText(tabIndex) 
+        if oldName[-1] == '*':
+            self.tabWidget.setTabText(tabIndex, oldName[:-1])
+      
         
     def _createNewTab(self, name=None, data=None):
-        pickerViewInstance = pickerView.PickerView(parent        = self, 
-                                                                     buttonManager = self.buttonManager, 
-                                                                     midView       = self.midView,
-                                                                     ZoomDrag      = self.ZoomDrag,
-                                                                     undoQueue     = self.undoQueue,
-                                                                     enableUndo    = self.enableUndo)
+        pickerViewInstance = pickerView.PickerView(parent = self, 
+                                                 buttonManager = self.buttonManager, 
+                                                 midView       = self.midView,
+                                                 ZoomDrag      = self.ZoomDrag,
+                                                 undoQueue     = self.undoQueue,
+                                                 enableUndo    = self.enableUndo)
+
+        pickerViewInstance.updateTab.connect(self.flagUnsavedTab)
         
         self.toolBoxWidget.buttonColorLabelSelected.connect(pickerViewInstance.updateButtonsColor)
         self.toolBoxWidget.scaleXUndo.connect(pickerViewInstance.undoButtonsScaleX) # 
@@ -449,7 +469,10 @@ class MainUI(QtWidgets.QWidget):
         data = pickerView.get()
         
         data['cacheSavePath'] = '' # update cacheSavePath
-        self._createNewTab(f"{data['tabName']} (copy)", data)
+        tabName = data['tabName']
+        if tabName[-1] == '*':
+            tabName = tabName[:-1]
+        self._createNewTab(f'{tabName} (copy)', data)
         self.currentTabUpdateCallback()
         
         

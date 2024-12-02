@@ -31,7 +31,7 @@ class MainMenu(QtWidgets.QMenuBar):
     #showToolBoxTriggered = QtCore.Signal(bool)
     preferencesTriggered = QtCore.Signal()
     
-    aboutTriggered       = QtCore.Signal()
+    #aboutTriggered       = QtCore.Signal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -132,7 +132,11 @@ class MainMenu(QtWidgets.QMenuBar):
         
         #self.ToolAction.triggered.connect(lambda _bool: self.showToolBoxTriggered.emit(_bool))
         self.preferencesAction.triggered.connect(self.preferencesTriggered.emit)
-        self.aboutAction.triggered.connect(self.aboutTriggered.emit)  
+        self.aboutAction.triggered.connect(self.openHelp)  
+        
+    def openHelp(self):
+        url = "https://github.com/kangddan/LinkPicker-Beta" 
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
         
     def _updateFileMenuActions(self):
         _ = self.mainUI.tabWidget.count() >= 2

@@ -110,4 +110,3 @@ def mergeNodes() -> PickerDataNode:
     newNode = createPickerDataNode()
     newNode.set(newData)
     return newNode
-        

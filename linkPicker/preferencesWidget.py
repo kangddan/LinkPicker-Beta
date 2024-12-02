@@ -277,6 +277,24 @@ class SettingsWidget(QtWidgets.QWidget):
         self.includeUndoDataCheckBox.setChecked(data['undoToFile'])
  
  
+class ListWidget(QtWidgets.QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAlternatingRowColors(True)                               
+        self.setFixedWidth(110)
+        self.setItemDelegate(widgets.CustomItemDelegate())
+        self.setStyleSheet('''
+                           QListWidget::item:alternate { background-color: #373737; }
+                           QListWidget::item:alternate:selected { background-color: #5285A6; } 
+                           ''')  
+        
+    
+    def mousePressEvent(self, event):
+        item = self.itemAt(event.pos())
+        if not item:
+            self.clearSelection() 
+        super().mousePressEvent(event) 
+
 
 class PreferencesWidget(QtWidgets.QDialog):
     
@@ -284,57 +302,62 @@ class PreferencesWidget(QtWidgets.QDialog):
     
     def __init__(self, parent=None, configManager=None):
         super().__init__(parent)
-        self.setFocusPolicy(QtCore.Qt.StrongFocus); self.setFocus()
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setWindowTitle('Preferences')
         self.resize(510, 450)
         self.mainUI = parent
         self.configManager = configManager
     
         self._createMenu()
-        self._createWidgets()
         self._createStackedWidget()
+        self._createWidgets()
         self._createLayouts()
         self._createConnections()
-        
         widgets.toParentMidPos(self, parent)
-        self.setStyleSheet('''
-                         QListWidget::item:alternate { background-color: #373737; }
-                         QListWidget::item:alternate:selected { background-color: #5285A6; } 
-                         ''')  
         
         self.set(self.configManager.get())
         self.cacheData = self.get()
         
         
     def _createWidgets(self):
-        self.listWidget = QtWidgets.QListWidget()
-        self.listWidget.setAlternatingRowColors(True)                               
-        self.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.listWidget = ListWidget(); self._addItems()
         
-        self.listWidget.setFixedWidth(110)
-        self.listWidget.setItemDelegate(widgets.CustomItemDelegate())
-        self.listWidget.addItems(['General', 'Settings'])
-        self.listWidget.setCurrentRow(0)
-        QtCore.QTimer.singleShot(0, self.listWidget.setFocus) # focus to listWidget
-        
+    
         self.ApplyButton  = QtWidgets.QPushButton('Apply')
         self.cancelButton = QtWidgets.QPushButton('Cancel')
         self.ApplyButton.setFixedHeight(32)
         self.cancelButton.setFixedHeight(32)
         
         
+    def _addItems(self):
+        itemMap = {'General'  : self.generalWidget,
+                   'Settings' : self.settingsWidget}
+                   
+        for itemName, widget in itemMap.items():
+            newItem = QtWidgets.QListWidgetItem(itemName)
+            newItem.setData(QtCore.Qt.UserRole, widget)
+            self.listWidget.addItem(newItem)
+            
+        self.listWidget.setCurrentRow(0)
+        QtCore.QTimer.singleShot(0, self.listWidget.setFocus) # focus to listWidget
+        
+          
     def _createMenu(self):
         self.menuBar = QtWidgets.QMenuBar(self) 
-        
         self.editMenu = QtWidgets.QMenu('Edit', self)
+        self.helpMenu = QtWidgets.QMenu('Help', self)
         
         self.revertToSavedAction  = Action('Revert to Saved', self)  
         self.restoreDefaultAction = Action('Restore Default Settings', self)
         
         self.editMenu.addAction(self.revertToSavedAction)
         self.editMenu.addAction(self.restoreDefaultAction)
+        
+        self.aboutHelpAction = Action('Help on Preferences...', self)
+        self.helpMenu.addAction(self.aboutHelpAction)
 
         self.menuBar.addMenu(self.editMenu)
+        self.menuBar.addMenu(self.helpMenu)
         
           
     def _createLayouts(self):
@@ -361,6 +384,8 @@ class PreferencesWidget(QtWidgets.QDialog):
         self.revertToSavedAction.triggered.connect(self.resetToSaved)
         self.restoreDefaultAction.triggered.connect(self.resetToDefault)
         
+        self.aboutHelpAction.triggered.connect(self.openHelp)
+        
         self.listWidget.itemSelectionChanged.connect(self.showSelectedWidget)
         
      
@@ -374,13 +399,15 @@ class PreferencesWidget(QtWidgets.QDialog):
         self.stackedWidget.addWidget(self.nullLabel)
         
         
+    def openHelp(self):
+        url = "https://github.com/kangddan/LinkPicker-Beta" 
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
+            
+            
     def showSelectedWidget(self):
         selItems = self.listWidget.selectedItems()
-        if not selItems:
-            self.stackedWidget.setCurrentWidget(self.nullLabel)
-        else:
-            self.stackedWidget.setCurrentIndex(self.listWidget.currentRow())
-            
+        self.stackedWidget.setCurrentWidget(self.nullLabel if not selItems else selItems[-1].data(QtCore.Qt.UserRole))
+         
             
     def get(self):
         return {'general' : self.generalWidget.get(),
@@ -404,3 +431,4 @@ class PreferencesWidget(QtWidgets.QDialog):
     def resetToSaved(self):
         self.set(self.cacheData) 
         
+ 
