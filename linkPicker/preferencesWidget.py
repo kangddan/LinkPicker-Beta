@@ -400,7 +400,7 @@ class PreferencesWidget(QtWidgets.QDialog):
         
         
     def openHelp(self):
-        url = "https://github.com/kangddan/LinkPicker-Beta" 
+        url = "https://kangddan.github.io/Pciker-Help/pickerHelp.pdf" 
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(url))
             
             
