@@ -20,28 +20,29 @@ def releaseAddSelection(allPickerButtons   : 'list[PickerButton]',
     if selectedNodes:
         
         # maxButton to button
-        for selectedButton in selectedButtons:
+        cacheSelectedButtons = list(selectedButtons)
+        for selectedButton in cacheSelectedButtons:
             if not selectedButton.isMaxButton:
                 continue
-            for button in allPickerButtons:
+            
+            for button in nonMaxPickerButtons:
                 if not (button in selectedButton and not button.selected):
                     continue
-                nodes = [node for node in button if cmds.objExists(node)]
-                if not nodes:
+                
+                mayaNode = button.nodes[0]
+                if not cmds.objExists(mayaNode):
                     continue
+                    
                 button.setSelected(True)
-                
-                # to maya node list
-                for node in nodes:
-                    if node not in selectedNodes:
-                        selectedNodes.append(node)
-                
+                if mayaNode not in selectedNodes:
+                    selectedNodes.append(node)
+                    
                 if button not in selectedButtons:
                     selectedButtons.append(button)
-                    
+
             # check max button
             if not all(cmds.objExists(node) for node in selectedButton):
-                if selectedButton in selectedButtons:
+                if selectedButton in cacheSelectedButtons:
                     selectedButtons.remove(selectedButton)
                 selectedButton.setSelected(False)
         
@@ -94,6 +95,4 @@ def releaseSubSelection(clickedButton  : 'PickerButton',
             else:
                 if selectedButton in clickedButton:
                     selectedButton.setSelected(False)
-                    selectedButtons.remove(selectedButton)
-                    
-                    
+                    selectedButtons.remove(selectedButton)     
