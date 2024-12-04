@@ -26,7 +26,7 @@ class MainMenu(QtWidgets.QMenuBar):
     #copyTriggered  = QtCore.Signal()
     #pasteTriggered = QtCore.Signal()
     changeBackgroundTriggered = QtCore.Signal()
-    resizeBackgroundTriggered = QtCore.Signal()
+    #resizeBackgroundTriggered = QtCore.Signal()
     changeNamespaceTriggered  = QtCore.Signal()
     #showToolBoxTriggered = QtCore.Signal(bool)
     preferencesTriggered = QtCore.Signal()
@@ -67,7 +67,7 @@ class MainMenu(QtWidgets.QMenuBar):
         #self.copyAction   = Action(QtGui.QIcon(':polyCopyUV.png'), 'Copy',   self.editMenu, shortcut='Ctrl+C')
         #self.pasteAction  = Action(QtGui.QIcon(':polyPasteUV.png'), 'Paste', self.editMenu, shortcut='Ctrl+V')
         self.changeBackgroundAction = Action(QtGui.QIcon(config.backgroundIcon), 'Change Background', self.editMenu)
-        self.resizeBackgroundAction = Action('Resize Background', self.editMenu)
+        #self.resizeBackgroundAction = Action('Resize Background', self.editMenu)
         self.changeNamespaceAction  = Action('Change Namespace',  self.editMenu)
         # self.ToolAction = Action('Show ToolBox', self.editMenu)
         # self.ToolAction.setCheckable(True)
@@ -97,7 +97,7 @@ class MainMenu(QtWidgets.QMenuBar):
         #self.editMenu.addAction(self.pasteAction)
         #self.editMenu.addSeparator()
         self.editMenu.addAction(self.changeBackgroundAction)
-        self.editMenu.addAction(self.resizeBackgroundAction)
+        #self.editMenu.addAction(self.resizeBackgroundAction)
         self.editMenu.addSeparator()
         self.editMenu.addAction(self.changeNamespaceAction)
         #self.editMenu.addSeparator()
@@ -127,7 +127,7 @@ class MainMenu(QtWidgets.QMenuBar):
         #self.copyAction.triggered.connect(self.copyTriggered.emit)
         #self.pasteAction.triggered.connect(self.pasteTriggered.emit)
         self.changeBackgroundAction.triggered.connect(self.changeBackgroundTriggered.emit)
-        self.resizeBackgroundAction.triggered.connect(self.resizeBackgroundTriggered.emit)
+        #self.resizeBackgroundAction.triggered.connect(self.resizeBackgroundTriggered.emit)
         self.changeNamespaceAction.triggered.connect(self.changeNamespaceTriggered.emit)
         
         #self.ToolAction.triggered.connect(lambda _bool: self.showToolBoxTriggered.emit(_bool))
@@ -154,7 +154,7 @@ class MainMenu(QtWidgets.QMenuBar):
         #self.preferencesAction.setEnabled(True)
         
         self.changeBackgroundAction.setEnabled(_)
-        self.resizeBackgroundAction.setEnabled(_)
+        #self.resizeBackgroundAction.setEnabled(_)
         self.changeNamespaceAction.setEnabled(_)
         
         # undo / redo

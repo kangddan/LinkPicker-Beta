@@ -57,7 +57,7 @@ class PickerView(QtWidgets.QWidget):
     def __init__(self, parent        = None, 
                        buttonManager = None,
                        midView       = False,
-                       ZoomDrag      = 50,
+                       ZoomDrag      = 25,
                        undoQueue     = 20,
                        enableUndo    = True):
                         
@@ -166,7 +166,9 @@ class PickerView(QtWidgets.QWidget):
 
 
     def _createWidgets(self):
-        self.parentAxis   = widgets.AxisWidget(self); self.parentAxis.hide()
+        self.pickerBackground = pickerBackground.PickerBackground(self)
+        self.pickerBackground.show()
+        
         self.selectionBox = widgets.SelectionBox(parent=self)
         
         # -----------------------------------------------------
@@ -180,7 +182,9 @@ class PickerView(QtWidgets.QWidget):
         
         # self.undoButton.clicked.connect(self.undo)
         # self.redoButton.clicked.connect(self.redo)
-        
+    
+    def setBackground(self, imagePath):
+        self.pickerBackground.setBackgroundImage(imagePath)
     
         
     @signalEmitter    
@@ -304,15 +308,22 @@ class PickerView(QtWidgets.QWidget):
     @signalEmitter
     def _raiseSelectedButtons(self):
         self.undoStack.push(undo.RaiseCmd(self).initialize())
+        self.pickerBackground.lower()
+        
     @signalEmitter
     def _lowerSelectedButtons(self):
         self.undoStack.push(undo.LowerCmd(self).initialize())
+        self.pickerBackground.lower()
+        
     @signalEmitter
     def _moveSelectedButtonsUp(self):
         self.undoStack.push(undo.UpCmd(self).initialize())
+        self.pickerBackground.lower()
+        
     @signalEmitter
     def _moveSelectedButtonsDown(self):
         self.undoStack.push(undo.DownCmd(self).initialize())
+        self.pickerBackground.lower()
             
     # ------------------------------------------------------------------
     def getAllPickerButtons(self) -> 'list[pickerButton.PickerButton]':
@@ -479,8 +490,9 @@ class PickerView(QtWidgets.QWidget):
         self.clickedParentPos = QtCore.QPointF()
         self.buttonsParentPos = QtCore.QPointF() if not self.midView else QtCore.QPointF(self.width() / 2, self.height() / 2)
         
-        self.parentAxis.move(self.buttonsParentPos.toPoint())
-        self.parentAxis.resize(100, 100) 
+        self.pickerBackground.updatePos()
+        #self.pickerBackground.resize(100, 100) 
+        self.pickerBackground.updateScale()
         
         if self.midView:
             self.updateMidViewOffset()
@@ -624,7 +636,7 @@ class PickerView(QtWidgets.QWidget):
                 newOrigPos = QtCore.QPointF(self.width() / 2, self.height() / 2)
                 self.buttonsParentPos = newOrigPos + self.viewOffset
 
-                self.parentAxis.move(self.buttonsParentPos.toPoint())
+                self.pickerBackground.updatePos()
         
                 self.updateMidViewOffset()
                 self.updateButtonsPos(updateScale=False)
@@ -648,8 +660,9 @@ class PickerView(QtWidgets.QWidget):
         self.buttonsParentPos = QtCore.QPointF(cx + _scale * (self.buttonsParentPos.x() - cx), 
                                                cy + _scale * (self.buttonsParentPos.y() - cy))
                                                
-        self.parentAxis.move(self.buttonsParentPos.toPoint())
-        self.parentAxis.resize(round(100 * self.sceneScale), round(100 * self.sceneScale)) 
+        self.pickerBackground.updatePos()
+        #self.pickerBackground.resize(round(100 * self.sceneScale), round(100 * self.sceneScale)) 
+        self.pickerBackground.updateScale()
         
         # move buttons
         self.updateButtonsPos(updateScale=True)
@@ -708,7 +721,7 @@ class PickerView(QtWidgets.QWidget):
         buttonGlobalPos = [pickerUtils.localToGlobal(button.localPos, self.buttonsParentPos, self.sceneScale) 
                            for button in self.allPickerButtons]          
         self.buttonsParentPos = QtCore.QPointF(self.width() / 2, self.height() / 2) if self.midView else QtCore.QPointF()
-        self.parentAxis.move(self.buttonsParentPos.toPoint())
+        self.pickerBackground.updatePos()
         for button, globalPos in zip(self.allPickerButtons, buttonGlobalPos):
             button.updateLocalPos(globalPos, self.buttonsParentPos, self.sceneScale)
 
@@ -814,6 +827,7 @@ class PickerView(QtWidgets.QWidget):
         #self.toOrigView(origSceneScale)
         # get undo data
         data['undos'] = self.getUndoData(undoToFile)
+        data['backgroundInfo'] = self.pickerBackground.get()
         return data
     
         
@@ -861,7 +875,25 @@ class PickerView(QtWidgets.QWidget):
             
             # set undo
             self.setUndoData(data)
+            self.pickerBackground.set(data['backgroundInfo'])
             
         except Exception as e:
             raise ValueError(f'Error processing button data: {e}')
         self.updateButtonsPos(True)   
+        
+        
+if __name__ =='__main__':
+    UI = QtWidgets.QDialog(parent=qtUtils.getMayaMainWindow())
+    UI.setWindowFlags(QtCore.Qt.WindowType.Window)
+    UI.resize(500, 650)
+    layout = QtWidgets.QVBoxLayout(UI)
+    pickerViewInstance = PickerView(buttonManager=buttonManager.ButtonManager(), midView=False)
+    layout.addWidget(pickerViewInstance)
+    UI.show()
+    
+    # pickerViewInstance.pickerBackground.setBackgroundImage(r'C:\Users\kangddan\Desktop\hide\IMG_9024(20240816-092159).jpg')
+    # pickerViewInstance.pickerBackground.resizeBackground(1300, 800)
+    
+    # data = pickerViewInstance.get()
+    # pickerViewInstance.set(data)
+    

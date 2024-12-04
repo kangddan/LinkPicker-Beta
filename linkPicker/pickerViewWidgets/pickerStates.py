@@ -105,7 +105,7 @@ class MoveViewState(MouseState):
     def handleMoveEvent(self, event, picker):     
         picker.frameMoveTag = True # update frameSelection
         picker.buttonsParentPos = picker.clickedParentPos + (event.localPos() - picker.clickedPos)
-        picker.parentAxis.move(picker.buttonsParentPos.toPoint())
+        picker.pickerBackground.updatePos()
         
         # move buttons
         picker.updateButtonsPos(updateScale=False)
@@ -134,8 +134,9 @@ class ScaleViewState(MouseState):
         picker.buttonsParentPos = QtCore.QPointF(cx + _scale * (picker.clickedParentPos.x() - cx), 
                                                  cy + _scale * (picker.clickedParentPos.y() - cy))
                                                    
-        picker.parentAxis.move(picker.buttonsParentPos.toPoint())
-        picker.parentAxis.resize(round(100 * picker.sceneScale), round(100 * picker.sceneScale)) 
+        picker.pickerBackground.updatePos()
+        #picker.pickerBackground.resize(round(100 * picker.sceneScale), round(100 * picker.sceneScale)) 
+        picker.pickerBackground.updateScale()
         
         # move buttons
         picker.updateButtonsPos(updateScale=True)
@@ -161,16 +162,17 @@ class SelectedState(MouseState):
                 if picker.clickedButton not in picker.selectedButtons:
                     picker.selectedButtons.append(picker.clickedButton)
                     picker.clickedButton.setSelected(True)
-                    
+                              
             elif event.modifiers() != QtCore.Qt.AltModifier:
                 picker.clearSelectedButtons()
                 picker.selectedButtons = [picker.clickedButton]
                 picker.clickedButton.setSelected(True)
-                    
+                
         else: 
             if not (event.modifiers() & (QtCore.Qt.ShiftModifier | QtCore.Qt.AltModifier)):
                 picker.clearSelectedButtons()
-
+                
+   
     def handleMoveEvent(self, event, picker):  
         picker.endPos = event.pos()
         picker.clearMoveTag = True # update cleat tag
@@ -211,7 +213,8 @@ class SelectedState(MouseState):
                     button.setSelected(False)
                     if button in picker.selectedButtons:
                         picker.selectedButtons.remove(button)
-      
+                        
+  
 
     def handleReleaseEvent(self, event, picker):
         picker.shiftAddButtons.clear()
@@ -225,6 +228,7 @@ class SelectedState(MouseState):
                     picker.selectedButtons.remove(picker.clickedButton)
                     
                 selection.releaseSubSelection(picker.clickedButton, picker.selectedButtons)
+
                   
         if picker.clearMoveTag:
             '''
@@ -239,6 +243,7 @@ class SelectedState(MouseState):
                         picker.selectedButtons.remove(button)
                         
                     selection.releaseSubSelection(button, picker.selectedButtons)
+
             picker.clearMoveTag = False
             
             

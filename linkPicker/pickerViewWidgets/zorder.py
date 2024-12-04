@@ -5,7 +5,6 @@ def raiseSelectedButtons(selectedButtons: 'list[PickerButton]') -> None:
              
         
 def lowerSelectedButtons(selectedButtons: 'list[PickerButton]') -> None:
-
     for button in selectedButtons:
         button.lower()
         

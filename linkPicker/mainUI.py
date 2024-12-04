@@ -9,7 +9,7 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from linkPicker import qtUtils, widgets, colorWidget, toolBoxWidget, config, metaNode, fileManager, mainUIMenu, preferencesWidget
+from linkPicker import qtUtils, widgets, colorWidget, toolBoxWidget, config, metaNode, fileManager, mainUIMenu, preferencesWidget, imageWidget
 from linkPicker.pickerViewWidgets import buttonManager, pickerView
 
 
@@ -306,7 +306,7 @@ class MainUI(QtWidgets.QWidget):
         self.mainMenuBar.undoTriggered.connect(self.undo)
         self.mainMenuBar.redoTriggered.connect(self.redo)
         
-        #self.mainMenuBar.showToolBoxTriggered[bool].connect(lambda _bool: self.toolBoxWidget.show() if _bool else self.toolBoxWidget.hide())
+        self.mainMenuBar.changeBackgroundTriggered.connect(self._showImageWidget)
         self.mainMenuBar.changeNamespaceTriggered.connect(self._showNamespaceEdit)
         self.mainMenuBar.preferencesTriggered.connect(self._showPreferences)
         
@@ -340,6 +340,23 @@ class MainUI(QtWidgets.QWidget):
         preferences = preferencesWidget.PreferencesWidget(self, self.configManager)
         preferences.preferencesUpdated.connect(self.updateTags)
         preferences.exec_()
+        
+    def _showImageWidget(self):
+        print(123)
+        currentPicker = self.getCurrentPickerView()
+        if currentPicker is None:
+            return
+
+        imageWin = imageWidget.ImageWindow(self)
+        oldImageData = currentPicker.pickerBackground.get()
+        imageWin.set(oldImageData)
+        imageWin.imagePathSet.connect(currentPicker.pickerBackground.setBackgroundImage)
+        imageWin.resizeImage.connect(currentPicker.pickerBackground.resizeBackground)
+        imageWin.setOpacity.connect(currentPicker.pickerBackground.updateOpacity)
+        imageWin.canceClicked.connect(currentPicker.pickerBackground.set)
+        imageWin.exec_()
+        print(456)
+        
         
     def updateTags(self):
         data = self.configManager.get()
@@ -418,21 +435,21 @@ class MainUI(QtWidgets.QWidget):
     
     
     def flagUnsavedTab(self):
-        pickerInstance = self.tabWidget.currentWidget() 
-        if not isinstance(pickerInstance, pickerView.PickerView):
+        currentPicker = self.getCurrentPickerView()
+        if currentPicker is None:
             return
         
-        tabIndex = self.tabWidget.indexOf(pickerInstance)
+        tabIndex = self.tabWidget.indexOf(currentPicker)
         oldName = self.tabWidget.tabText(tabIndex) 
         if oldName[-1] != '*':
             self.tabWidget.setTabText(tabIndex, f'{oldName}*')
             
     def unflagUnsavedTab(self):
-        pickerInstance = self.tabWidget.currentWidget() 
-        if not isinstance(pickerInstance, pickerView.PickerView):
+        currentPicker = self.getCurrentPickerView()
+        if currentPicker is None:
             return
             
-        tabIndex = self.tabWidget.indexOf(pickerInstance)
+        tabIndex = self.tabWidget.indexOf(currentPicker)
         oldName  = self.tabWidget.tabText(tabIndex) 
         if oldName[-1] == '*':
             self.tabWidget.setTabText(tabIndex, oldName[:-1])

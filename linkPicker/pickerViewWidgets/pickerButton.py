@@ -11,15 +11,18 @@ from . import pickerUtils
 
 class PickerButton(QtWidgets.QWidget):
     SELECTED_COLOR = QtGui.QColor(225, 225, 225)
+    STATE_COLOR    = QtGui.QColor(170, 170, 170)
     
     def __repr__(self) -> str:
-        globaPos = self.pos()
-        localPos = self.localPos
-        return f'<{self.__class__.__name__} at {hex(id(self))}: G->({globaPos.x()}, {globaPos.y()}), L->({localPos.x()}, {localPos.y()})>'
+        #globaPos = self.pos()
+        #localPos = self.localPos
+        #return f'<{self.__class__.__name__} at {hex(id(self))}: G->({globaPos.x()}, {globaPos.y()}), L->({localPos.x()}, {localPos.y()})>'
+        return f'<{self.__class__.__name__} at {hex(id(self))} max={self.isMaxButton}>'
 
 
     def __str__(self) -> str:
-        return str(self.nodes)
+        #return str(self.nodes)
+        return f'<{self.__class__.__name__} at {hex(id(self))} max={self.isMaxButton}>'
     
     
     def __contains__(self, other) -> bool:
@@ -107,7 +110,17 @@ class PickerButton(QtWidgets.QWidget):
         self.updateButton(nodes)
         
         self.buttonId = buttonId
+        '''
+        self.maxState = False
         
+        
+    def updateMaxButtonState(self, maxState):
+        if not self.isMaxButton:
+            return
+        self.maxState = maxState
+        self.buttonColor = PickerButton.STATE_COLOR if self.maxState else self.color
+        self.update()'''
+           
 
     def _setToolTop(self):
         tooltipText = '<br>'.join(f'-> {node}' for node in self.nodes)
@@ -247,7 +260,7 @@ class PickerButton(QtWidgets.QWidget):
         
         
     def enterEvent(self, event):
-        self.buttonColor = PickerButton.SELECTED_COLOR if self.selected else QtGui.QColor(180, 180, 180)
+        self.buttonColor = PickerButton.SELECTED_COLOR if self.selected else PickerButton.STATE_COLOR
         self.update()
         
         

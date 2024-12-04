@@ -59,8 +59,8 @@ class FrameSelectorHelper(object):
 
         self.pivkerView.buttonsParentPos = newButtonsParentPos
     
-        self.pivkerView.parentAxis.move(self.pivkerView.buttonsParentPos.toPoint())
-        self.pivkerView.parentAxis.resize(round(100 * self.pivkerView.sceneScale), round(100 * self.pivkerView.sceneScale))
+        self.pivkerView.pickerBackground.updatePos()
+        self.pivkerView.pickerBackground.updateScale()
 
         # update buttons pos and scale
         self.pivkerView.updateButtonsPos(updateScale=True)

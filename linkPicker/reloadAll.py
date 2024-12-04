@@ -10,7 +10,7 @@ modulesToReload = [
     'linkPicker.pickerViewWidgets.pickerBackground', 'linkPicker.pickerViewWidgets.pickerButton', 'linkPicker.pickerViewWidgets.pickerMenu',
     'linkPicker.pickerViewWidgets.pickerStates', 'linkPicker.pickerViewWidgets.pickerUtils', 'linkPicker.pickerViewWidgets.pickerView',
     'linkPicker.pickerViewWidgets.selection', 'linkPicker.pickerViewWidgets.undo', 'linkPicker.pickerViewWidgets.view', 
-    'linkPicker.pickerViewWidgets.zorder'
+    'linkPicker.pickerViewWidgets.zorder', 'linkPicker.imageWidget'
 ]
 
 def reloadIt():

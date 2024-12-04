@@ -18,9 +18,9 @@ def releaseAddSelection(allPickerButtons   : 'list[PickerButton]',
             selectedButtons.remove(button)
             
     if selectedNodes:
-        
         # maxButton to button
         cacheSelectedButtons = list(selectedButtons)
+        
         for selectedButton in cacheSelectedButtons:
             if not selectedButton.isMaxButton:
                 continue
@@ -62,8 +62,8 @@ def releaseAddSelection(allPickerButtons   : 'list[PickerButton]',
                 if maxButton not in selectedButtons:
                     selectedButtons.append(maxButton)
                  
-
         cmds.select(selectedNodes, ne=True, replace=True)
+
 
 def releaseSubSelection(clickedButton  : 'PickerButton',
                         selectedButtons: 'list[PickerButton]') -> None:
@@ -95,4 +95,47 @@ def releaseSubSelection(clickedButton  : 'PickerButton',
             else:
                 if selectedButton in clickedButton:
                     selectedButton.setSelected(False)
-                    selectedButtons.remove(selectedButton)     
+                    selectedButtons.remove(selectedButton)
+
+
+
+
+
+def clearMaxButtonsState(MaxPickerButtons):
+    for maxButton in MaxPickerButtons:
+        maxButton.updateMaxButtonState(False)
+    
+            
+def updateMaxButtonState(clickedButton, 
+                         allPickerButtons : 'list[PickerButton]',
+                         MaxPickerButtons : 'list[PickerButton]', 
+                         selectedButtons  : 'list[PickerButton]',):
+                            
+    clearMaxButtonsState(MaxPickerButtons)                          
+    if not selectedButtons:
+        return   
+    
+    maxStateButtons = []
+    cacheButtons = []
+    if clickedButton is not None and clickedButton.isMaxButton:
+        for button in allPickerButtons:
+            if button in clickedButton:
+                cacheButtons.append(button)
+        
+        for cacheButton in cacheButtons:
+            for maxButton in MaxPickerButtons:
+                if cacheButton in maxButton:
+                    maxStateButtons.append(maxButton)
+          
+        for maxButton in maxStateButtons:
+            maxButton.updateMaxButtonState(True)
+        
+        return
+  
+    for selectedButton in selectedButtons:
+        for maxButton in MaxPickerButtons:
+            if selectedButton in maxButton and not maxButton.selected:
+                maxButton.updateMaxButtonState(True)
+
+                
+                
