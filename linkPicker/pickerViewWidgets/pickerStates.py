@@ -124,6 +124,7 @@ class ScaleViewState(MouseState):
     def handleMoveEvent(self, event, picker):     
         picker.frameMoveTag = True # update frameSelection
         offset = event.localPos() - picker.clickedPos
+        #picker.sceneScale = max(0.20, min(picker.origScale + (offset.x() + offset.y())  * (picker.ZoomDrag * 0.0003), 10.0)) # update scale
         picker.sceneScale = max(0.20, 
                             min(picker.origScale + (offset.x() + offset.y())  
                             * (picker.ZoomDrag / 200) ** math.e, 10.0)) # update scale
@@ -134,6 +135,7 @@ class ScaleViewState(MouseState):
                                                  cy + _scale * (picker.clickedParentPos.y() - cy))
                                                    
         picker.pickerBackground.updatePos()
+        #picker.pickerBackground.resize(round(100 * picker.sceneScale), round(100 * picker.sceneScale)) 
         picker.pickerBackground.updateScale()
         
         # move buttons

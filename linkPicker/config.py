@@ -13,6 +13,7 @@ mirrorIcon            = os.path.join(ICONS_PATH, 'mirrorIcon.png')
 blackCursorIcon       = os.path.join(ICONS_PATH, 'blackCursor.png')
 greenCursorIcon       = os.path.join(ICONS_PATH, 'greenCursor.png')
 backgroundIcon        = os.path.join(ICONS_PATH, 'backgroundLogo.png')
+closeIcon             = os.path.join(ICONS_PATH, 'close.png')
 
 
 class ConfigManager(object):

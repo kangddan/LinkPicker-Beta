@@ -4,7 +4,7 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from linkPicker import widgets
+from . import widgets, config
 
 
 class ImageWindow(QtWidgets.QDialog):
@@ -53,6 +53,9 @@ class ImageWindow(QtWidgets.QDialog):
         self.pathLineEdit = QtWidgets.QLineEdit()
         self.pathLineEdit.setFixedHeight(32)
         self.pathLineEdit.setPlaceholderText('Image Path...')
+        
+        self.pathLineEditAction = self.pathLineEdit.addAction(QtGui.QIcon(config.closeIcon), QtWidgets.QLineEdit.TrailingPosition)
+        
         self.pathButton = QtWidgets.QPushButton('')
         self.pathButton.setIcon(QtGui.QIcon(':fileOpen.png'))
         self.pathButton.setFixedSize(35, 30)
@@ -71,6 +74,7 @@ class ImageWindow(QtWidgets.QDialog):
         self.cancelButton = QtWidgets.QPushButton('Cancel')
         self.ApplyButton.setFixedHeight(32)
         self.cancelButton.setFixedHeight(32)
+        
         
     def _createLayouts(self):
         mainLayout = QtWidgets.QVBoxLayout(self)
@@ -104,7 +108,6 @@ class ImageWindow(QtWidgets.QDialog):
         
         
     def _createConnections(self):
-        
         self.pathButton.clicked.connect(self._showFileSelectDialog)
         self.widthLineEdit.editingFinished.connect(lambda: self.resizeImage.emit(self.widthLineEdit.get(), self.heightLineEdit.get()))
         self.heightLineEdit.editingFinished.connect(lambda: self.resizeImage.emit(self.widthLineEdit.get(), self.heightLineEdit.get()))
@@ -114,13 +117,34 @@ class ImageWindow(QtWidgets.QDialog):
         self.cancelButton.clicked.connect(self.close)
         self.ApplyButton.clicked.connect(self.applyClose)
         
+        self.pathLineEdit.editingFinished.connect(self.updateUI)
+        self.pathLineEditAction.triggered.connect(self.clearPath)
+        
+    def clearPath(self):
+        self.pathLineEdit.clear()
+        self.updateUI()
+        #self.setFocus()
+        
+    def updateUI(self, path=''):
+        imagePath = path or self.pathLineEdit.text()
+        image = QtGui.QPixmap(imagePath)
+        if image.isNull():
+            self.imagePathSet.emit('') 
+            return
+        imageSize = image.size()
+        self.pathLineEdit.setText(imagePath)
+        self.widthLineEdit.set(imageSize.width())
+        self.heightLineEdit.set(imageSize.height())
+        self.imagePathSet.emit(imagePath)    
+        
+        
     def applyClose(self):
         self.applyTag = True
         
         # get oldData and newData 
         oldData = self.oldImageData
         newData = self.get()
-        if oldData != newData:
+        if oldData != newData:# and not QtGui.QPixmap(newData['imagePath']).isNull():
             data = {'old' : oldData,
                     'new' : newData}
             self.addUndo.emit(data)
@@ -129,13 +153,8 @@ class ImageWindow(QtWidgets.QDialog):
         
     def _showFileSelectDialog(self):
         imagePath, self.SELECTED_FILTER = QtWidgets.QFileDialog.getOpenFileName(self, 'Select Image', '', self.FILE_FTLTERS, self.SELECTED_FILTER)
-        image = QtGui.QPixmap(imagePath)
-        if imagePath and not image.isNull():
-            imageSize = image.size()
-            self.pathLineEdit.setText(imagePath)
-            self.widthLineEdit.set(imageSize.width())
-            self.heightLineEdit.set(imageSize.height())
-            self.imagePathSet.emit(imagePath)
+        self.updateUI(imagePath)
+            
             
     def get(self) -> dict:
         return {'imagePath'  : self.pathLineEdit.text(),

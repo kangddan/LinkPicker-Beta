@@ -611,8 +611,8 @@ class NamespaceEditWidget(QtWidgets.QDialog):
 
         self.namespaceComboBox.addItems([':'] + cmds.namespaceInfo(lon=True, recurse=True))
         
-        self.okBut = QtWidgets.QPushButton('Ok')
-        self.closeBut = QtWidgets.QPushButton('Close')
+        self.okBut = QtWidgets.QPushButton('Apply')
+        self.closeBut = QtWidgets.QPushButton('Cancel')
         
     def _createLayouts(self):
         mainLayout = QtWidgets.QVBoxLayout(self)

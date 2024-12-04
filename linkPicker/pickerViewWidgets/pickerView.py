@@ -31,6 +31,7 @@ class PickerEnum(enum.Enum):
     MOVE_BUTTONS     = enum.auto()
     
     
+   
 class PickerView(QtWidgets.QWidget):
     
     def signalEmitter(func):
@@ -74,7 +75,9 @@ class PickerView(QtWidgets.QWidget):
         self.undoQueue  = undoQueue
         self.enableUndo = enableUndo
         
+        
         self.viewOffset = QtCore.QPointF(0, 0) 
+        
         
         self._createMenu()
         self._createWidgets()
@@ -130,6 +133,7 @@ class PickerView(QtWidgets.QWidget):
         
         self.allPickerButtonsIdMap = {}    
         self.undoStack = undo.PickerViewUndoStackBase(self, self.enableUndo, self.undoQueue)    
+        #self.undoStack = QtWidgets.QUndoStack()
         self.undoCacheButtons = {}
         self.newNodes = [] # maya nodes by menu
         
@@ -166,7 +170,21 @@ class PickerView(QtWidgets.QWidget):
         self.pickerBackground.show()
         
         self.selectionBox = widgets.SelectionBox(parent=self)
-
+        
+        # -----------------------------------------------------
+        # self.undoButton = QtWidgets.QPushButton(self)
+        # self.redoButton = QtWidgets.QPushButton(self)
+        # self.undoButton.move(200, 0)
+        # self.redoButton.move(250, 0)
+        
+        # self.undoButton.setIcon(QtGui.QIcon(':undo_s.png'))
+        # self.redoButton.setIcon(QtGui.QIcon(':redo_s.png'))
+        
+        # self.undoButton.clicked.connect(self.undo)
+        # self.redoButton.clicked.connect(self.redo)
+        
+    def addCmdButton(self):
+        print('Add CMD Button')
     
     def addBackgroundUndo(self, data):
         self.updateTab.emit()
@@ -189,6 +207,7 @@ class PickerView(QtWidgets.QWidget):
         
         
     def _createConnections(self):
+        self.pickerViewMenu.addCommandButtonTriggered.connect(self.addCmdButton)
         #self.pickerViewMenu.viewModeTriggered[bool].connect(self.autoCenterView)
         
         self.pickerViewMenu.addSingleButtonTriggered.connect(self.createSingleButton)
@@ -264,6 +283,9 @@ class PickerView(QtWidgets.QWidget):
         if self.isActiveTab: 
             self.undoStack.push(undo.UpdateButtonsNamespaceCmd(self).initialize(namespace))
             self.updateTab.emit()
+            # self.namespace = namespace
+            # for button in self.allPickerButtons:
+            #     button.updateNamespace(namespace)
     
     
     # delete button -------------------------------------------------------------------  
@@ -281,7 +303,10 @@ class PickerView(QtWidgets.QWidget):
     
     @signalEmitter
     def _deleteSelectedButton(self):
-        self.undoStack.push(undo.DeleteButtonCmd(self).initialize())    
+        self.undoStack.push(undo.DeleteButtonCmd(self).initialize())
+        
+    # delete button -------------------------------------------------------------------        
+        
         
     # zoreder ----------------------------------------------------------    
     @signalEmitter
@@ -470,6 +495,7 @@ class PickerView(QtWidgets.QWidget):
         self.buttonsParentPos = QtCore.QPointF() if not self.midView else QtCore.QPointF(self.width() / 2, self.height() / 2)
         
         self.pickerBackground.updatePos()
+        #self.pickerBackground.resize(100, 100) 
         self.pickerBackground.updateScale()
         
         if self.midView:
@@ -639,6 +665,7 @@ class PickerView(QtWidgets.QWidget):
                                                cy + _scale * (self.buttonsParentPos.y() - cy))
                                                
         self.pickerBackground.updatePos()
+        #self.pickerBackground.resize(round(100 * self.sceneScale), round(100 * self.sceneScale)) 
         self.pickerBackground.updateScale()
         
         # move buttons
@@ -761,6 +788,7 @@ class PickerView(QtWidgets.QWidget):
         While this may not be the most elegant approach
         it effectively resolves the issue of precision loss :)
         '''
+        #self.toMaxView() 
         data = {'tabName'         : self.getTabName(),
                 'origSceneScale'  : origSceneScale,
                 'sceneScale'      : self.sceneScale,
@@ -800,6 +828,8 @@ class PickerView(QtWidgets.QWidget):
         Revert to the view before zooming
         mainly to keep the original tab's view unchanged when duplicating a tab
         '''
+        #self.toOrigView(origSceneScale)
+        # get undo data
         data['undos'] = self.getUndoData(undoToFile)
         data['backgroundInfo'] = self.pickerBackground.get()
         return data
@@ -840,10 +870,12 @@ class PickerView(QtWidgets.QWidget):
                 
             self.viewOffset = QtCore.QPointF(*data['viewOffset'])
             self.midView    = data['midView']
-
+            #self.pickerViewMenu.setViewMode(self.midView)
             if self.midView:
                 self.resizeEvent(QtGui.QResizeEvent(self.size(), self.size()))
-
+            
+            # Restore to the original scale !!!
+            #self.toOrigView(data['origSceneScale'])
             
             # set undo
             self.setUndoData(data)

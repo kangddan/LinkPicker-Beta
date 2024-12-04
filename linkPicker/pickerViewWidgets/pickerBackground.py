@@ -17,7 +17,7 @@ class PickerBackground(QtWidgets.QWidget):
         
         self.ImageWidth  = 1
         self.ImageHeight = 1
-        self.opacity = 0.6
+        self.opacity = 1
         
     def get(self) -> dict:
         return {'imagePath'  : self.imagePath,

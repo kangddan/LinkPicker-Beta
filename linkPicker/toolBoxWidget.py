@@ -4,7 +4,7 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from linkPicker import colorWidget, widgets
+from . import colorWidget, widgets
 
 
 class ToolBoxWidget(QtWidgets.QWidget):

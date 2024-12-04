@@ -161,7 +161,6 @@ class SettingsWidget(QtWidgets.QWidget):
         
     def _createLayouts(self):
         # undo
-        
         gridLayout = QtWidgets.QGridLayout()
         gridLayout.addWidget(self.undoLabel, 0, 0)
         gridLayout.addWidget(self.onBut, 0, 1)
@@ -175,9 +174,10 @@ class SettingsWidget(QtWidgets.QWidget):
 
         undoGroupBox = createGroupbox('Undo', gridLayout)
         
-        # view mode
-        fileLayout = QtWidgets.QHBoxLayout()
+        # file
+        fileLayout = QtWidgets.QVBoxLayout()
         fileLayout.addWidget(self.includeUndoDataCheckBox)
+        fileLayout.addWidget(self.imageDataCheckBox)
 
         fileGroupBox = createGroupbox('File', fileLayout)
 
@@ -233,7 +233,10 @@ class SettingsWidget(QtWidgets.QWidget):
         self.undoLenEdit.setFixedWidth(100)
         # file
         self.includeUndoDataCheckBox = QtWidgets.QCheckBox('Carry undo data when saving the file')
-        self.includeUndoDataCheckBox.setChecked(True)
+        self.includeUndoDataCheckBox.setChecked(False)
+        self.imageDataCheckBox = QtWidgets.QCheckBox('Save with image data (Beta)')
+        self.imageDataCheckBox.setChecked(False)
+        self.imageDataCheckBox.setEnabled(False)
 
         
     def _createConnections(self):
@@ -253,6 +256,9 @@ class SettingsWidget(QtWidgets.QWidget):
 
         
     def lockQueueAttr(self, index):
+        if isinstance(index, QtWidgets.QAbstractButton):
+            index = self.queueGroup.id(index)
+
         self.undoLenEdit.setEnabled(bool(index))
         self.queueSizeLabel.setEnabled(bool(index))
     

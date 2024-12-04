@@ -167,8 +167,6 @@ class PickerMenu(QtWidgets.QMenu):
         self.updateButtonAction.setEnabled(clickedButton is not None and isMayaNodeSelected)
         self.deleteButtonAction.setEnabled(isButtonSelected)
         
-        self.addCommandButtonAction.setEnabled(False)
-        
         self.mirrorAction.setEnabled(isButtonSelected)
         self.reverseAction.setEnabled(hasMoreThanOneButton)
   
