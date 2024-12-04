@@ -10,10 +10,10 @@ else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
 
-from linkPicker import (
+from .. import (
     qtUtils, config, widgets
     )
-from linkPicker.pickerViewWidgets import (
+from . import (
     pickerButton, pickerMenu, pickerUtils, pickerStates,  
     zorder, align, selection, mirror, view, buttonManager, pickerBackground, undo
     ) 
@@ -31,7 +31,6 @@ class PickerEnum(enum.Enum):
     MOVE_BUTTONS     = enum.auto()
     
     
-   
 class PickerView(QtWidgets.QWidget):
     
     def signalEmitter(func):
@@ -75,9 +74,7 @@ class PickerView(QtWidgets.QWidget):
         self.undoQueue  = undoQueue
         self.enableUndo = enableUndo
         
-        
         self.viewOffset = QtCore.QPointF(0, 0) 
-        
         
         self._createMenu()
         self._createWidgets()
@@ -133,7 +130,6 @@ class PickerView(QtWidgets.QWidget):
         
         self.allPickerButtonsIdMap = {}    
         self.undoStack = undo.PickerViewUndoStackBase(self, self.enableUndo, self.undoQueue)    
-        #self.undoStack = QtWidgets.QUndoStack()
         self.undoCacheButtons = {}
         self.newNodes = [] # maya nodes by menu
         
@@ -170,21 +166,11 @@ class PickerView(QtWidgets.QWidget):
         self.pickerBackground.show()
         
         self.selectionBox = widgets.SelectionBox(parent=self)
-        
-        # -----------------------------------------------------
-        # self.undoButton = QtWidgets.QPushButton(self)
-        # self.redoButton = QtWidgets.QPushButton(self)
-        # self.undoButton.move(200, 0)
-        # self.redoButton.move(250, 0)
-        
-        # self.undoButton.setIcon(QtGui.QIcon(':undo_s.png'))
-        # self.redoButton.setIcon(QtGui.QIcon(':redo_s.png'))
-        
-        # self.undoButton.clicked.connect(self.undo)
-        # self.redoButton.clicked.connect(self.redo)
+
     
-    def setBackground(self, imagePath):
-        self.pickerBackground.setBackgroundImage(imagePath)
+    def addBackgroundUndo(self, data):
+        self.updateTab.emit()
+        self.undoStack.push(undo.ImageUpdateCmd(self).initialize(data))
     
         
     @signalEmitter    
@@ -203,7 +189,6 @@ class PickerView(QtWidgets.QWidget):
         
         
     def _createConnections(self):
-        #self.updateTab.connect(lambda instance: print(instance))
         #self.pickerViewMenu.viewModeTriggered[bool].connect(self.autoCenterView)
         
         self.pickerViewMenu.addSingleButtonTriggered.connect(self.createSingleButton)
@@ -279,9 +264,6 @@ class PickerView(QtWidgets.QWidget):
         if self.isActiveTab: 
             self.undoStack.push(undo.UpdateButtonsNamespaceCmd(self).initialize(namespace))
             self.updateTab.emit()
-            # self.namespace = namespace
-            # for button in self.allPickerButtons:
-            #     button.updateNamespace(namespace)
     
     
     # delete button -------------------------------------------------------------------  
@@ -299,10 +281,7 @@ class PickerView(QtWidgets.QWidget):
     
     @signalEmitter
     def _deleteSelectedButton(self):
-        self.undoStack.push(undo.DeleteButtonCmd(self).initialize())
-        
-    # delete button -------------------------------------------------------------------        
-        
+        self.undoStack.push(undo.DeleteButtonCmd(self).initialize())    
         
     # zoreder ----------------------------------------------------------    
     @signalEmitter
@@ -491,7 +470,6 @@ class PickerView(QtWidgets.QWidget):
         self.buttonsParentPos = QtCore.QPointF() if not self.midView else QtCore.QPointF(self.width() / 2, self.height() / 2)
         
         self.pickerBackground.updatePos()
-        #self.pickerBackground.resize(100, 100) 
         self.pickerBackground.updateScale()
         
         if self.midView:
@@ -661,7 +639,6 @@ class PickerView(QtWidgets.QWidget):
                                                cy + _scale * (self.buttonsParentPos.y() - cy))
                                                
         self.pickerBackground.updatePos()
-        #self.pickerBackground.resize(round(100 * self.sceneScale), round(100 * self.sceneScale)) 
         self.pickerBackground.updateScale()
         
         # move buttons
@@ -784,7 +761,6 @@ class PickerView(QtWidgets.QWidget):
         While this may not be the most elegant approach
         it effectively resolves the issue of precision loss :)
         '''
-        #self.toMaxView() 
         data = {'tabName'         : self.getTabName(),
                 'origSceneScale'  : origSceneScale,
                 'sceneScale'      : self.sceneScale,
@@ -824,8 +800,6 @@ class PickerView(QtWidgets.QWidget):
         Revert to the view before zooming
         mainly to keep the original tab's view unchanged when duplicating a tab
         '''
-        #self.toOrigView(origSceneScale)
-        # get undo data
         data['undos'] = self.getUndoData(undoToFile)
         data['backgroundInfo'] = self.pickerBackground.get()
         return data
@@ -866,12 +840,10 @@ class PickerView(QtWidgets.QWidget):
                 
             self.viewOffset = QtCore.QPointF(*data['viewOffset'])
             self.midView    = data['midView']
-            #self.pickerViewMenu.setViewMode(self.midView)
+
             if self.midView:
                 self.resizeEvent(QtGui.QResizeEvent(self.size(), self.size()))
-            
-            # Restore to the original scale !!!
-            #self.toOrigView(data['origSceneScale'])
+
             
             # set undo
             self.setUndoData(data)
@@ -880,20 +852,3 @@ class PickerView(QtWidgets.QWidget):
         except Exception as e:
             raise ValueError(f'Error processing button data: {e}')
         self.updateButtonsPos(True)   
-        
-        
-if __name__ =='__main__':
-    UI = QtWidgets.QDialog(parent=qtUtils.getMayaMainWindow())
-    UI.setWindowFlags(QtCore.Qt.WindowType.Window)
-    UI.resize(500, 650)
-    layout = QtWidgets.QVBoxLayout(UI)
-    pickerViewInstance = PickerView(buttonManager=buttonManager.ButtonManager(), midView=False)
-    layout.addWidget(pickerViewInstance)
-    UI.show()
-    
-    # pickerViewInstance.pickerBackground.setBackgroundImage(r'C:\Users\kangddan\Desktop\hide\IMG_9024(20240816-092159).jpg')
-    # pickerViewInstance.pickerBackground.resizeBackground(1300, 800)
-    
-    # data = pickerViewInstance.get()
-    # pickerViewInstance.set(data)
-    

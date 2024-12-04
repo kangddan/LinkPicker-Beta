@@ -957,6 +957,42 @@ class UpdateButtonsNamespaceCmd(PickerViewUndoBase):
         self.initUndo           = data['initUndo']
 
 
+
+class ImageUpdateCmd(PickerViewUndoBase):
+    def __init__(self, pickerView, skipRedo=False):
+        super().__init__(skipRedo=skipRedo)
+        self.setText('Set Background')
+        self.pickerView = pickerView      
+        
+    def initialize(self, data):
+        self.oldData  = data['old']
+        self.nweData  = data['new']
+        self.initUndo = True
+        return self
+          
+    def undo(self):
+        self.pickerView.pickerBackground.set(self.oldData)
+        
+    def redo(self):
+        if not super().redo():
+            return
+        if self.initUndo:
+            self.initUndo = False
+            return  
+        self.pickerView.pickerBackground.set(self.nweData)
+        
+        
+    def get(self):
+        return {'undoClassName' : self.__class__.__name__,
+                'old'           : self.oldData,
+                'new'           : self.nweData,
+                'initUndo'      : self.initUndo}
+    
+    def set(self, data):
+        self.oldData  = data['old']
+        self.nweData  = data['new']
+        self.initUndo = data['initUndo']
+
   
     
     

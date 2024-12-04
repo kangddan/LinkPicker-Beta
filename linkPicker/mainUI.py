@@ -9,8 +9,11 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from linkPicker import qtUtils, widgets, colorWidget, toolBoxWidget, config, metaNode, fileManager, mainUIMenu, preferencesWidget, imageWidget
-from linkPicker.pickerViewWidgets import buttonManager, pickerView
+from . import (
+    qtUtils, widgets, colorWidget, toolBoxWidget, 
+    config, metaNode, fileManager, mainUIMenu, preferencesWidget, imageWidget)
+    
+from .pickerViewWidgets import buttonManager, pickerView
 
 
 class MainUI(QtWidgets.QWidget):
@@ -234,7 +237,7 @@ class MainUI(QtWidgets.QWidget):
         self.setObjectName('PickerWindow')
         self.setWindowFlags(QtCore.Qt.WindowType.Window)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.setWindowTitle('Link Picker v0.1.0-beta')
+        self.setWindowTitle('Link Picker v1.0')
         self.resize(600, 750)
         
         self._createMenu()
@@ -342,20 +345,19 @@ class MainUI(QtWidgets.QWidget):
         preferences.exec_()
         
     def _showImageWidget(self):
-        print(123)
         currentPicker = self.getCurrentPickerView()
         if currentPicker is None:
             return
 
         imageWin = imageWidget.ImageWindow(self)
-        oldImageData = currentPicker.pickerBackground.get()
-        imageWin.set(oldImageData)
+        imageWin.set(currentPicker.pickerBackground.get())
         imageWin.imagePathSet.connect(currentPicker.pickerBackground.setBackgroundImage)
         imageWin.resizeImage.connect(currentPicker.pickerBackground.resizeBackground)
         imageWin.setOpacity.connect(currentPicker.pickerBackground.updateOpacity)
         imageWin.canceClicked.connect(currentPicker.pickerBackground.set)
+        imageWin.addUndo.connect(currentPicker.addBackgroundUndo)
         imageWin.exec_()
-        print(456)
+
         
         
     def updateTags(self):

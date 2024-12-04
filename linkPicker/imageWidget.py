@@ -13,6 +13,7 @@ class ImageWindow(QtWidgets.QDialog):
     setOpacity   = QtCore.Signal(int)
     
     canceClicked = QtCore.Signal(dict)
+    addUndo      = QtCore.Signal(dict)
     
     FILE_FTLTERS    = 'PNG (*.png);;JPG (*.jpg *.jpeg);;BMP (*.bmp);;Images (*.png *.jpg *.bmp *.jpeg);;All Files (*.*)'
     SELECTED_FILTER = 'PNG (*.png)'
@@ -115,6 +116,14 @@ class ImageWindow(QtWidgets.QDialog):
         
     def applyClose(self):
         self.applyTag = True
+        
+        # get oldData and newData 
+        oldData = self.oldImageData
+        newData = self.get()
+        if oldData != newData:
+            data = {'old' : oldData,
+                    'new' : newData}
+            self.addUndo.emit(data)
         self.close()
         
         
@@ -128,6 +137,12 @@ class ImageWindow(QtWidgets.QDialog):
             self.heightLineEdit.set(imageSize.height())
             self.imagePathSet.emit(imagePath)
             
+    def get(self) -> dict:
+        return {'imagePath'  : self.pathLineEdit.text(),
+                'ImageWidth' : self.widthLineEdit.get(),
+                'ImageHeight': self.heightLineEdit.get(),
+                'opacity'    : self.opacitySlider.value() / 100.0,}
+            
             
     def set(self, data):
         self.oldImageData = data
@@ -135,8 +150,3 @@ class ImageWindow(QtWidgets.QDialog):
         self.widthLineEdit.set(data['ImageWidth'])
         self.heightLineEdit.set(data['ImageHeight'])
         self.opacitySlider.setValue(data['opacity'] * 100)
-        
-
-if __name__ == '__main__':
-    i = ImageWindow()
-    i.show() 
