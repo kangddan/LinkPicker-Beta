@@ -58,7 +58,7 @@ class PickerMenu(QtWidgets.QMenu):
         self.updateButtonAction       = Action(QtGui.QIcon(':refresh.png'), 'Update Button', self)
         self.deleteButtonAction       = Action(QtGui.QIcon(':delete.png'), 'Delete Selected Button(s)',  self, shortcut='Delete')
         
-        self.addCommandButtonAction  = Action(QtGui.QIcon(config.pythonLogo), 'Add Command Button',  self)
+        self.addCommandButtonAction  = Action(QtGui.QIcon(config.pythonLogo), 'Add Command Button (Beta)',  self)
         self.alignHorizontallyAction = Action(QtGui.QIcon(config.alignHorizontallyIcon), 'Align Buttons Horizontally', self)
         self.alignVerticallyAction   = Action(QtGui.QIcon(config.alignVerticallyIcon), 'Align Buttons Vertically',  self)
         self.distributeButtonsAction = Action('Distribute Buttons Evenly', self)
@@ -163,8 +163,14 @@ class PickerMenu(QtWidgets.QMenu):
         
         self.addSingleButtonAction.setEnabled(isMayaNodeSelected)
         self.addMultipleButtonsAction.setEnabled(hasMultipleNodes)
-
-        self.updateButtonAction.setEnabled(clickedButton is not None and isMayaNodeSelected)
+        
+        # update cmd button action text
+        if clickedButton is not None and clickedButton.isCmdButton:
+            self.addCommandButtonAction.setText('Edit Command Button (Beta)')
+        else:
+            self.addCommandButtonAction.setText('Add Command Button (Beta)')
+        
+        self.updateButtonAction.setEnabled(clickedButton is not None and not clickedButton.isCmdButton and isMayaNodeSelected)
         self.deleteButtonAction.setEnabled(isButtonSelected)
         
         self.mirrorAction.setEnabled(isButtonSelected)

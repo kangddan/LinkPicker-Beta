@@ -24,7 +24,6 @@ class FrameSelectorHelper(object):
             '''
             https://doc.qt.io/qtforpython-5/PySide2/QtCore/QRectF.html#PySide2.QtCore.PySide2.QtCore.QRectF.united
             '''
-            #buttonRect = QtCore.QRectF(button.pos(), button.size())
             buttonRect = QtCore.QRectF(pickerUtils.localToGlobal(button.localPos, self.pivkerView.buttonsParentPos, self.pivkerView.sceneScale), 
                                        QtCore.QSizeF(button.scaleX * self.pivkerView.sceneScale, button.scaleY * self.pivkerView.sceneScale))
             boundingBox = boundingBox.united(buttonRect)

@@ -1,3 +1,4 @@
+import uuid
 import maya.cmds as cmds
 
 if int(cmds.about(version=True)) >= 2025:
@@ -378,15 +379,16 @@ def getButtonData(button):
     localPos  = button.localPos
     color     = button.color
     textColor = button.textColor
-    buttonData = {'localPos'  : [localPos.x(), localPos.y()],
-                  'color'     : [color.red(), color.green(), color.blue()],
-                  'scaleX'    : button.scaleX,
-                  'scaleY'    : button.scaleY,
-                  'textColor' : [textColor.red(), textColor.green(), textColor.blue()],
-                  'labelText' : button.labelText,
-                  'oldNodes'  : button.oldNodes,
-                  'nodes'     : button.nodes,
-                  'buttonId'  : button.buttonId}
+    buttonData = {'localPos'    : [localPos.x(), localPos.y()],
+                  'color'       : [color.red(), color.green(), color.blue()],
+                  'scaleX'      : button.scaleX,
+                  'scaleY'      : button.scaleY,
+                  'textColor'   : [textColor.red(), textColor.green(), textColor.blue()],
+                  'labelText'   : button.labelText,
+                  'oldNodes'    : button.oldNodes,
+                  'nodes'       : button.nodes,
+                  'buttonId'    : button.buttonId,
+                  'code'        : button.code}
     return buttonData
     
     
@@ -413,7 +415,7 @@ def createButtonByInfo(buttonData, pickerView):
              'textColor' : QtGui.QColor(*buttonData['textColor']),
              'labelText' : buttonData['labelText']} 
 
-    button = pickerView.createButton(buttonData['oldNodes'], _data, buttonData['buttonId'])
+    button = pickerView.createButton(buttonData['oldNodes'], _data, buttonData['buttonId'], buttonData['code'])
     button.updateButton(buttonData['nodes'], buttonData['oldNodes'])
     
     '''
@@ -500,11 +502,11 @@ class CreateSingleButtonCmd(PickerViewUndoBase):
         self.pickerView = pickerView
 
     def initialize(self):
-        self.buttonDta = {}
+        self.buttonData = {}
         return self
 
     def undo(self):
-        buttonId = self.buttonDta['buttonId']
+        buttonId = self.buttonData['buttonId']
         if buttonId in self.pickerView.allPickerButtonsIdMap:
             button = self.pickerView.allPickerButtonsIdMap[buttonId]
             
@@ -515,23 +517,23 @@ class CreateSingleButtonCmd(PickerViewUndoBase):
         if not super().redo():
             return
             
-        if not self.buttonDta:
+        if not self.buttonData:
             nodeList  = self.pickerView.pickerViewMenu.getSelectedNodes()
             newButton = self.pickerView.createButton(nodeList)
             newButton.setSelected(True)
             self.pickerView.selectedButtons.append(newButton) 
 
-            self.buttonDta = getButtonData(newButton)
+            self.buttonData = getButtonData(newButton)
         else:
-            button = createButtonByInfo(self.buttonDta, self.pickerView)       
+            button = createButtonByInfo(self.buttonData, self.pickerView)       
             self.pickerView.updateButtonsPos(True, [button])    
             
     def get(self):
         return {'undoClassName': self.__class__.__name__,
-                'buttonDta'    : self.buttonDta}
+                'buttonData'    : self.buttonData}
     
     def set(self, data):
-        self.buttonDta = data['buttonDta']
+        self.buttonData = data['buttonData']
         
        
    
@@ -993,6 +995,80 @@ class ImageUpdateCmd(PickerViewUndoBase):
         self.nweData  = data['new']
         self.initUndo = data['initUndo']
 
-  
+
+class CreateCommandButtonCmd(PickerViewUndoBase):
     
+    def __init__(self, pickerView, skipRedo=False):
+        super().__init__(skipRedo=skipRedo)
+        self.setText('Create Command Button')
+        self.pickerView = pickerView
+
+    def initialize(self, codeData: dict):
+        self.codeData   = codeData
+        self.buttonData = {}
+        return self
+
+    def undo(self):
+        buttonId = self.buttonData['buttonId']
+        if buttonId in self.pickerView.allPickerButtonsIdMap:
+            button = self.pickerView.allPickerButtonsIdMap[buttonId]
+            
+            button.deleteLater()
+            self.pickerView._updateButtonsCache(button) # update cache
+     
+    def redo(self):
+        if not super().redo():
+            return
+            
+        if not self.buttonData:
+            cmdButton = self.pickerView.createButton(nodeList=[str(uuid.uuid4())], code=dict(self.codeData))
+            cmdButton.updateLabelText(self.codeData['name'], self.pickerView.sceneScale)
+            self.buttonData = getButtonData(cmdButton)
+        else:
+            button = createButtonByInfo(self.buttonData, self.pickerView)       
+            self.pickerView.updateButtonsPos(True, [button])    
+            
+    def get(self):
+        return {'undoClassName': self.__class__.__name__,
+                'buttonData'    : self.buttonData}
     
+    def set(self, data):
+        self.buttonData = data['buttonData']
+        
+     
+class UpdateCommandButtonCmd(PickerViewUndoBase):
+    
+    def __init__(self, pickerView, skipRedo=False):
+        super().__init__(skipRedo=skipRedo)
+        self.setText('Update CommandButton')
+        self.pickerView = pickerView
+        
+    def initialize(self, codeData: dict):
+        self.buttonId    = self.pickerView.clickedButton.buttonId
+        self.oldCodeData = self.pickerView.clickedButton.code
+        self.newCodeData = codeData
+        return self
+    
+    def _update(self, codeData: dict):
+        if self.buttonId in self.pickerView.allPickerButtonsIdMap:
+            updateButton = self.pickerView.allPickerButtonsIdMap[self.buttonId]
+            updateButton.updateCode(codeData)
+    
+    def undo(self):
+        self._update(self.oldCodeData)
+      
+    def redo(self):
+        if not super().redo():
+            return
+        self._update(self.newCodeData)
+        
+    def get(self):
+        return {'undoClassName' : self.__class__.__name__,
+                'buttonId'      : self.buttonId,
+                'oldCodeData'   : self.oldCodeData,
+                'newCodeData'   : self.newCodeData}
+    
+    def set(self, data):
+        self.buttonId    = data['buttonId']
+        self.oldCodeData = data['oldCodeData']
+        self.newCodeData = data['newCodeData']

@@ -1,5 +1,7 @@
 import uuid
 import maya.cmds as cmds
+import maya.mel as mel
+
 if int(cmds.about(version=True)) >= 2025:
     from PySide6 import QtWidgets, QtCore, QtGui
 else:
@@ -52,17 +54,18 @@ class PickerButton(QtWidgets.QWidget):
             raise TypeError(f"Index must be an int or str, got {type(index).__name__}.")
 
     
-    def __init__(self, globalPos : QtCore.QPointF, 
-                       parentPos : QtCore.QPointF, 
-                       color     : QtGui.QColor = QtGui.QColor(100, 100, 100),
-                       sceneScale: float = 1.0, 
-                       scaleX    : int = 40,
-                       scaleY    : int = 40,
-                       textColor : QtGui.QColor = QtGui.QColor(10, 10, 10),
-                       labelText : str = '',
-                       parent    : QtWidgets.QWidget = None,
-                       nodes     : list = None,
-                       buttonId  : str = None):  
+    def __init__(self, globalPos   : QtCore.QPointF, 
+                       parentPos   : QtCore.QPointF, 
+                       color       : QtGui.QColor = QtGui.QColor(100, 100, 100),
+                       sceneScale  : float = 1.0, 
+                       scaleX      : int = 40,
+                       scaleY      : int = 40,
+                       textColor   : QtGui.QColor = QtGui.QColor(10, 10, 10),
+                       labelText   : str = '',
+                       parent      : QtWidgets.QWidget = None,
+                       nodes       : list = None,
+                       buttonId    : str = None,
+                       code        : dict = None):  
         '''
         Args:
             globalPos (QPointF): Initial global position of the button when created.
@@ -99,6 +102,8 @@ class PickerButton(QtWidgets.QWidget):
         
         self.buttonColor = color
         self.selected    = False
+        
+        self.code = code
 
         self.labelText = labelText
         self.textColor = textColor
@@ -107,9 +112,12 @@ class PickerButton(QtWidgets.QWidget):
         self.updateLabelText(self.labelText, sceneScale)
         self.updateLabelColor(self.textColor)
         
-        self.updateButton(nodes)
+        
         
         self.buttonId = buttonId
+        self.picker = parent
+        
+        self.updateButton(nodes)
         '''
         self.maxState = False
         
@@ -120,11 +128,24 @@ class PickerButton(QtWidgets.QWidget):
         self.maxState = maxState
         self.buttonColor = PickerButton.STATE_COLOR if self.maxState else self.color
         self.update()'''
+    
+    @property    
+    def isCmdButton(self) -> bool:
+        return self.code and isinstance(self.code, dict)
+        
+    def updateCode(self, codeData: dict):
+        self.code = codeData
+        self._setToolTop()
+        self.updateLabelText(self.code['name'], self.picker.sceneScale)
+        self.setSelected(False)
            
 
     def _setToolTop(self):
-        tooltipText = '<br>'.join(f'-> {node}' for node in self.nodes)
-        self.setToolTip(tooltipText)
+        if self.isCmdButton:
+            self.setToolTip(self.code['code'] or 'Null')
+        else:
+            tooltipText = '<br>'.join(f'-> {node}' for node in self.nodes)
+            self.setToolTip(tooltipText)
         
         
     def updateButton(self, nodes, oldNodes=None):
@@ -140,8 +161,8 @@ class PickerButton(QtWidgets.QWidget):
         
         
     def updateNamespace(self, namespace: str):
-        self.nodes = self.oldNodes if namespace == ':' else path.updateNamespaceWithOptional(self.nodes, namespace)
-        
+            
+        self.nodes = self.oldNodes if namespace == ':' else path.updateNamespaceWithOptional(self.nodes, namespace) 
         # clear namespace and update oldNodes
         if namespace == '':
             self.oldNodes = self.nodes
@@ -162,6 +183,10 @@ class PickerButton(QtWidgets.QWidget):
     def updateLabelText(self, text: str, sceneScale: float):
         self.labelText = text
         self.scaleText(sceneScale)
+        
+        # update code data
+        if self.isCmdButton:
+            self.code['name'] = text
         
     def scaleText(self, sceneScale: float):
         font = QtGui.QFont('Verdana', round(self.scaleY * sceneScale * 0.15))
@@ -255,16 +280,23 @@ class PickerButton(QtWidgets.QWidget):
         
         if self.isCircle:
             painter.drawEllipse(rect)
+        elif self.isCmdButton:
+            radius = min(self.width(), self.height()) * 0.2
+            painter.drawRoundedRect(rect, radius, radius) 
         else:
             painter.drawRect(rect)
         
         
     def enterEvent(self, event):
+        if self.isCmdButton:
+            return
         self.buttonColor = PickerButton.SELECTED_COLOR if self.selected else PickerButton.STATE_COLOR
         self.update()
         
         
     def leaveEvent(self, event):
+        if self.isCmdButton:
+            return
         self.buttonColor = PickerButton.SELECTED_COLOR if self.selected else self.color
         self.update()
         
@@ -280,4 +312,22 @@ class PickerButton(QtWidgets.QWidget):
                 
     def set(self):
         pass
-   
+        
+    def clickeMove(self, value):
+        pos = self.pos()
+        self.move(round(pos.x() + value * self.picker.sceneScale), round(pos.y() + value * self.picker.sceneScale))
+        
+    def mousePressEvent(self, event): 
+        if event.button() == QtCore.Qt.LeftButton and event.modifiers() == QtCore.Qt.NoModifier and self.isCmdButton:
+            self.clickeMove(1)
+        super().mouseReleaseEvent(event)
+        
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton and event.modifiers() == QtCore.Qt.NoModifier and self.isCmdButton:
+            cmds.evalDeferred(self.code['code']) if self.code['type'] == 'Python' else mel.eval(self.code['code'])
+            self.clickeMove(-1)
+        super().mouseReleaseEvent(event)
+
+
+
+

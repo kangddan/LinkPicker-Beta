@@ -581,9 +581,9 @@ def toParentMidPos(_self, parent):
     mainRect = parent.geometry()
     selfRect = _self.geometry() 
     
-    x = mainRect.x() + (mainRect.width() - selfRect.width()) // 2
-    y = mainRect.y() + (mainRect.height() - selfRect.height()) // 2
-    _self.move(x, y)
+    x = mainRect.x() + (mainRect.width() - selfRect.width()) / 2
+    y = mainRect.y() + (mainRect.height() - selfRect.height()) / 2
+    _self.move(QtCore.QPoint(round(x), round(y)))
         
 
 class NamespaceEditWidget(QtWidgets.QDialog):

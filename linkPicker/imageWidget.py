@@ -29,7 +29,7 @@ class ImageWindow(QtWidgets.QDialog):
         super().__init__(parent)
         self.setFocusPolicy(QtCore.Qt.StrongFocus); self.setFocus()
         self.setWindowTitle('Image Window')
-        self.resize(330, 165)
+        self.resize(350, 180)
         self.mainUI = parent
  
         self._createWidgets()
@@ -49,6 +49,13 @@ class ImageWindow(QtWidgets.QDialog):
         self.oldImageData = {}
         self.applyTag = False
         
+        self.origImagePath = ''
+        
+        # CACHE UNDO DATA
+        self.undoWidth  = 0
+        self.undoheight = 0
+        
+        
     def _createWidgets(self):
         self.pathLineEdit = QtWidgets.QLineEdit()
         self.pathLineEdit.setFixedHeight(32)
@@ -58,13 +65,21 @@ class ImageWindow(QtWidgets.QDialog):
         
         self.pathButton = QtWidgets.QPushButton('')
         self.pathButton.setIcon(QtGui.QIcon(':fileOpen.png'))
+        self.pathButton.setToolTip('Select Image')
+        self.pathButton.setToolTipDuration(2000)
         self.pathButton.setFixedSize(35, 30)
+        
         
         self.widthLineEdit  = widgets.NumberLineEdit('int', 0, 1, 1, 99999)
         self.widthLineEdit.setFixedHeight(32)
         self.heightLineEdit = widgets.NumberLineEdit('int', 0, 1, 1, 99999)
         self.heightLineEdit.setFixedHeight(32)
-        
+        self.resizeButton = QtWidgets.QPushButton('')
+        self.resizeButton.setIcon(QtGui.QIcon(':refresh.png'))
+        self.resizeButton.setToolTip('Reset to original resolution')
+        self.resizeButton.setToolTipDuration(2000)
+        self.resizeButton.setFixedSize(35, 30)
+            
         self.opacitySlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.opacitySlider.setObjectName('opacitySlider')
         self.opacitySlider.setRange(1, 100)
@@ -86,10 +101,12 @@ class ImageWindow(QtWidgets.QDialog):
         pathLayout.addWidget(self.pathButton)
         
         sizeLayout = QtWidgets.QHBoxLayout()
+        sizeLayout.setSpacing(3)
         sizeLayout.addWidget(QtWidgets.QLabel('Width:  '))
         sizeLayout.addWidget(self.widthLineEdit)
         sizeLayout.addWidget(QtWidgets.QLabel('Height:  '))
         sizeLayout.addWidget(self.heightLineEdit)
+        sizeLayout.addWidget(self.resizeButton)
         
         opacityLayout = QtWidgets.QHBoxLayout()
         opacityLayout.addWidget(QtWidgets.QLabel('Opacity:'))
@@ -109,8 +126,8 @@ class ImageWindow(QtWidgets.QDialog):
         
     def _createConnections(self):
         self.pathButton.clicked.connect(self._showFileSelectDialog)
-        self.widthLineEdit.editingFinished.connect(lambda: self.resizeImage.emit(self.widthLineEdit.get(), self.heightLineEdit.get()))
-        self.heightLineEdit.editingFinished.connect(lambda: self.resizeImage.emit(self.widthLineEdit.get(), self.heightLineEdit.get()))
+        self.widthLineEdit.editingFinished.connect(self.runResizeImageSignal)
+        self.heightLineEdit.editingFinished.connect(self.runResizeImageSignal)
         
         self.opacitySlider.valueChanged.connect(self.setOpacity.emit)
         
@@ -120,23 +137,62 @@ class ImageWindow(QtWidgets.QDialog):
         self.pathLineEdit.editingFinished.connect(self.updateUI)
         self.pathLineEditAction.triggered.connect(self.clearPath)
         
+        self.resizeButton.clicked.connect(self.getOriginalResolution)
+    
+    
+    def updateCacheData(self):
+        self.undoWidth  = self.widthLineEdit.get()
+        self.undoheight = self.heightLineEdit.get()
+        
+        
+    def runResizeImageSignal(self):
+        self.resizeImage.emit(self.widthLineEdit.get(), self.heightLineEdit.get())
+        self.updateCacheData()
+        
+        
+        
+    def getOriginalResolution(self):
+        imagePath = self.pathLineEdit.text()
+        image = QtGui.QPixmap(imagePath)
+        if image.isNull():
+            return 
+        imageSize = image.size()
+        self.widthLineEdit.set(imageSize.width())
+        self.heightLineEdit.set(imageSize.height())
+        self.updateCacheData()
+        self.runResizeImageSignal()
+
+           
     def clearPath(self):
         self.pathLineEdit.clear()
+        self.origImagePath = ''
         self.updateUI()
-        #self.setFocus()
-        
+
+
     def updateUI(self, path=''):
         imagePath = path or self.pathLineEdit.text()
         image = QtGui.QPixmap(imagePath)
+        
         if image.isNull():
             self.imagePathSet.emit('') 
+            self.origImagePath = ''
+            return   
+        if imagePath == self.origImagePath:
             return
-        imageSize = image.size()
-        self.pathLineEdit.setText(imagePath)
-        self.widthLineEdit.set(imageSize.width())
-        self.heightLineEdit.set(imageSize.height())
-        self.imagePathSet.emit(imagePath)    
+            
+        self.origImagePath = imagePath
         
+        self.pathLineEdit.setText(imagePath)
+        imageSize = image.size()    
+        
+        w = self.undoWidth if self.undoWidth != 1 else imageSize.width()
+        h = self.undoheight if self.undoheight != 1 else imageSize.height()
+        
+        self.widthLineEdit.set(w)
+        self.heightLineEdit.set(h)
+        self.imagePathSet.emit(imagePath)  
+        self.resizeImage.emit(self.widthLineEdit.get(), self.heightLineEdit.get())
+   
         
     def applyClose(self):
         self.applyTag = True
@@ -153,7 +209,8 @@ class ImageWindow(QtWidgets.QDialog):
         
     def _showFileSelectDialog(self):
         imagePath, self.SELECTED_FILTER = QtWidgets.QFileDialog.getOpenFileName(self, 'Select Image', '', self.FILE_FTLTERS, self.SELECTED_FILTER)
-        self.updateUI(imagePath)
+        if imagePath:
+            self.updateUI(imagePath)
             
             
     def get(self) -> dict:
@@ -169,3 +226,6 @@ class ImageWindow(QtWidgets.QDialog):
         self.widthLineEdit.set(data['ImageWidth'])
         self.heightLineEdit.set(data['ImageHeight'])
         self.opacitySlider.setValue(data['opacity'] * 100)
+        
+        self.origImagePath = data['imagePath']
+        self.updateCacheData()

@@ -135,7 +135,6 @@ class ScaleViewState(MouseState):
                                                  cy + _scale * (picker.clickedParentPos.y() - cy))
                                                    
         picker.pickerBackground.updatePos()
-        #picker.pickerBackground.resize(round(100 * picker.sceneScale), round(100 * picker.sceneScale)) 
         picker.pickerBackground.updateScale()
         
         # move buttons

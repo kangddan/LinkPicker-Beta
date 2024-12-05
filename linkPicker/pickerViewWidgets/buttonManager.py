@@ -32,8 +32,9 @@ class ButtonManager(object):
                      sceneScale      : float,
                      nodeList        : 'list[MayaNodeName]',
                      parent          : 'PickerView' = None,
-                     data            : dict = None ,
-                     buttonId        : str  = None) -> pickerButton.PickerButton:
+                     data            : dict = None,
+                     buttonId        : str  = None,
+                     code            : dict = None) -> pickerButton.PickerButton:
                         
         data           = data or self.getToolBoxInfo()
         buttonColor    = data['color']
@@ -41,17 +42,18 @@ class ButtonManager(object):
         buttonscaleY   = data['scaleY']
         labelTextColor = data['textColor']
         labelText      = data['labelText']
-        button = pickerButton.PickerButton(globalPos  = buttonGlobalPos, 
-                                           parentPos  = buttonsParentPos,
-                                           color      = buttonColor,
-                                           sceneScale = sceneScale,
-                                           scaleX     = buttonScaleX, 
-                                           scaleY     = buttonscaleY,
-                                           textColor  = labelTextColor,
-                                           labelText  = labelText,
-                                           parent     = parent,
-                                           nodes      = nodeList,
-                                           buttonId   = str(uuid.uuid4()) if buttonId is None else buttonId)
+        button = pickerButton.PickerButton(globalPos   = buttonGlobalPos, 
+                                           parentPos   = buttonsParentPos,
+                                           color       = buttonColor,
+                                           sceneScale  = sceneScale,
+                                           scaleX      = buttonScaleX, 
+                                           scaleY      = buttonscaleY,
+                                           textColor   = labelTextColor,
+                                           labelText   = labelText,
+                                           parent      = parent,
+                                           nodes       = nodeList,
+                                           buttonId    = str(uuid.uuid4()) if buttonId is None else buttonId,
+                                           code        = code)
         return button
         
         
