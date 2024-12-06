@@ -617,18 +617,17 @@ class PickerView(QtWidgets.QWidget):
         Avoid triggering callbacks in a loop after selecting buttons within the UI
         '''  
         PickerView.setSelectionViaUi(True)
-        if self.selectedButtons:
+        if self.selectedButtons and not self.clearSelectedNodes:
             self.buttonManager.updateToolBoxWidget(self.selectedButtons[-1]) # update toolbox
             if event.button() not in (QtCore.Qt.RightButton, QtCore.Qt.MiddleButton):
                 selection.releaseAddSelection(self.allPickerButtons,
                                               self.nonMaxPickerButtons,
                                               self.MaxPickerButtons,
                                               self.selectedButtons)        
+        elif self.clearSelectedNodes:
+            self.clearSelectedNodes = False
         else:
-            if self.clearSelectedNodes:
-                self.clearSelectedNodes = False
-            else:
-                cmds.select(cl=True)
+            cmds.select(cl=True)
         '''
         Permit callbacks when selecting nodes in Maya
         '''     
