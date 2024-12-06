@@ -319,22 +319,18 @@ class PickerView(QtWidgets.QWidget):
     @signalEmitter
     def _raiseSelectedButtons(self):
         self.undoStack.push(undo.RaiseCmd(self).initialize())
-        self.pickerBackground.lower()
         
     @signalEmitter
     def _lowerSelectedButtons(self):
         self.undoStack.push(undo.LowerCmd(self).initialize())
-        self.pickerBackground.lower()
         
     @signalEmitter
     def _moveSelectedButtonsUp(self):
         self.undoStack.push(undo.UpCmd(self).initialize())
-        self.pickerBackground.lower()
         
     @signalEmitter
     def _moveSelectedButtonsDown(self):
         self.undoStack.push(undo.DownCmd(self).initialize())
-        self.pickerBackground.lower()
             
     # ------------------------------------------------------------------
     def getAllPickerButtons(self) -> 'list[pickerButton.PickerButton]':

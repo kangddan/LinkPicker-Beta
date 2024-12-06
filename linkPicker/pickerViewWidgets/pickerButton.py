@@ -1,3 +1,4 @@
+import enum
 import uuid
 import maya.cmds as cmds
 import maya.mel as mel
@@ -9,6 +10,12 @@ else:
 
 from .. import path
 from . import pickerUtils
+
+
+class PickerButtonEnum(enum.Enum):
+    NONE = enum.auto()  
+      
+    LEFT_CLICKE = enum.auto()
 
 
 class PickerButton(QtWidgets.QWidget):
@@ -118,6 +125,8 @@ class PickerButton(QtWidgets.QWidget):
         self.picker = parent
         
         self.updateButton(nodes)
+        
+        self.buttonEnum = PickerButtonEnum.NONE
         '''
         self.maxState = False
         
@@ -318,14 +327,22 @@ class PickerButton(QtWidgets.QWidget):
         self.move(round(pos.x() + value * self.picker.sceneScale), round(pos.y() + value * self.picker.sceneScale))
         
     def mousePressEvent(self, event): 
-        if event.button() == QtCore.Qt.LeftButton and event.modifiers() == QtCore.Qt.NoModifier and self.isCmdButton:
+        if event.buttons() == QtCore.Qt.MouseButton.LeftButton and event.modifiers() == QtCore.Qt.NoModifier and self.isCmdButton:
+            self.setSelected(True)
+            self.buttonEnum = PickerButtonEnum.LEFT_CLICKE
             self.clickeMove(1)
+            
         super().mouseReleaseEvent(event)
         
+        
     def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton and event.modifiers() == QtCore.Qt.NoModifier and self.isCmdButton:
-            cmds.evalDeferred(self.code['code']) if self.code['type'] == 'Python' else mel.eval(self.code['code'])
-            self.clickeMove(-1)
+        if self.buttonEnum == PickerButtonEnum.LEFT_CLICKE:
+            self.setSelected(False)
+            self.buttonEnum = PickerButtonEnum.NONE
+            self.clickeMove(-1)  
+            if self.rect().contains(event.pos()):
+                cmds.evalDeferred(self.code['code']) if self.code['type'] == 'Python' else mel.eval(self.code['code'])
+   
         super().mouseReleaseEvent(event)
 
 

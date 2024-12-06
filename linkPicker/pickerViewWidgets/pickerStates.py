@@ -155,8 +155,12 @@ class SelectedState(MouseState):
             if button.geometry().contains(picker.startPos):
                 picker.clickedButton = button
                 break
-           
+        
         if picker.clickedButton is not None:
+            if picker.clickedButton.isCmdButton:
+                picker.resetPickerState(False)
+                return
+                
             if event.modifiers() == QtCore.Qt.ShiftModifier:
                 if picker.clickedButton not in picker.selectedButtons:
                     picker.selectedButtons.append(picker.clickedButton)

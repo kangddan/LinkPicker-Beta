@@ -552,8 +552,10 @@ class ZOrderBaseCmd(PickerViewUndoBase):
     def undo(self):
         # update z orde !!    
         updateButtonsZorder(self.AllButtonZOrder, self.pickerView.allPickerButtonsIdMap)   
+        self.pickerView.pickerBackground.lower()
         # update buttons zorder
         self.pickerView.allPickerButtons = self.pickerView.getAllPickerButtons() 
+        
         
     def redo(self):
         if not super().redo():
@@ -561,6 +563,7 @@ class ZOrderBaseCmd(PickerViewUndoBase):
         buttons = getButtonsByCacheButtonsID(self.buttonsId, self.pickerView)
 
         self.run(buttons)
+        self.pickerView.pickerBackground.lower()
         self.pickerView.allPickerButtons = self.pickerView.getAllPickerButtons()  # update buttons zorder
         
     def run(self, buttons):
