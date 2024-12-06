@@ -181,6 +181,9 @@ class SelectedState(MouseState):
                 
         
     def handleMoveEvent(self, event, picker):  
+        if picker.clearSelectedNodes:
+            picker.clearSelectedNodes = False
+        
         picker.endPos = event.pos()
         picker.clearMoveTag = True # update cleat tag
             
@@ -189,6 +192,8 @@ class SelectedState(MouseState):
 
         if not (event.modifiers() & QtCore.Qt.AltModifier):
             for button in picker.allPickerButtons:
+                if button.isCmdButton:
+                    continue
                 inSelection = picker.selectionBoxRect.intersects(button.geometry())
 
                 if event.modifiers() == QtCore.Qt.ShiftModifier:
