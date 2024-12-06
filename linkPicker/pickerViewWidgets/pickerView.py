@@ -569,24 +569,26 @@ class PickerView(QtWidgets.QWidget):
      
         # move view
         elif event.buttons() == QtCore.Qt.MouseButton.MiddleButton:
-            self.setPickerState(pickerStates.MoveViewState, event)
             self.clearSelectedNodes = True
+            self.setPickerState(pickerStates.MoveViewState, event)
+            
 
         # scale view
         elif event.modifiers() == QtCore.Qt.AltModifier and event.buttons() == QtCore.Qt.MouseButton.RightButton:
-            self.setPickerState(pickerStates.ScaleViewState, event)
             self.clearSelectedNodes = True
+            self.setPickerState(pickerStates.ScaleViewState, event)
+            
             
         # selected buttons and update Selection Box
         elif event.buttons() == QtCore.Qt.MouseButton.LeftButton and event.modifiers() != QtCore.Qt.ControlModifier:
-            self.setPickerState(pickerStates.SelectedState, event)
             self.clearSelectedNodes = False
+            self.setPickerState(pickerStates.SelectedState, event)
             
         # move buttons
         elif event.modifiers() == QtCore.Qt.ControlModifier and event.buttons() == QtCore.Qt.MouseButton.LeftButton:
-            self.setPickerState(pickerStates.MoveButtonsState, event)
             self.clearSelectedNodes = True
-            
+            self.setPickerState(pickerStates.MoveButtonsState, event)
+                
         else:
             super().mousePressEvent(event)
         

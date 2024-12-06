@@ -159,6 +159,10 @@ class SelectedState(MouseState):
         if picker.clickedButton is not None:
             if picker.clickedButton.isCmdButton:
                 picker.resetPickerState(False)
+                '''
+                If the script button is clicked, do not deselect on mouse release, as this is more user-friendly
+                '''
+                picker.clearSelectedNodes = True 
                 return
                 
             if event.modifiers() == QtCore.Qt.ShiftModifier:
@@ -175,7 +179,7 @@ class SelectedState(MouseState):
             if not (event.modifiers() & (QtCore.Qt.ShiftModifier | QtCore.Qt.AltModifier)):
                 picker.clearSelectedButtons()
                 
-   
+        
     def handleMoveEvent(self, event, picker):  
         picker.endPos = event.pos()
         picker.clearMoveTag = True # update cleat tag
