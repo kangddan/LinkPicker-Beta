@@ -9,8 +9,6 @@ else:
     Action      = QtWidgets.QAction
     ActionGroup = QtWidgets.QActionGroup
 
-from .. import config
-
 
 class PickerMenu(QtWidgets.QMenu):
     
@@ -58,9 +56,9 @@ class PickerMenu(QtWidgets.QMenu):
         self.updateButtonAction       = Action(QtGui.QIcon(':refresh.png'), 'Update Button', self)
         self.deleteButtonAction       = Action(QtGui.QIcon(':delete.png'), 'Delete Selected Button(s)',  self, shortcut='Delete')
         
-        self.addCommandButtonAction  = Action(QtGui.QIcon(config.pythonLogo), 'Add Command Button (Beta)',  self)
-        self.alignHorizontallyAction = Action(QtGui.QIcon(config.alignHorizontallyIcon), 'Align Buttons Horizontally', self)
-        self.alignVerticallyAction   = Action(QtGui.QIcon(config.alignVerticallyIcon), 'Align Buttons Vertically',  self)
+        self.addCommandButtonAction  = Action(QtGui.QIcon('icons:pythonLogo2.png'), 'Add Command Button (Beta)',  self)
+        self.alignHorizontallyAction = Action(QtGui.QIcon('icons:alignHorizontallyIcon.png'), 'Align Buttons Horizontally', self)
+        self.alignVerticallyAction   = Action(QtGui.QIcon('icons:alignVerticallyIcon.png'), 'Align Buttons Vertically',  self)
         self.distributeButtonsAction = Action('Distribute Buttons Evenly', self)
         
         self.mirrorAction  = Action(QtGui.QIcon(':teLoopTool.png'), 'Mirror', self)

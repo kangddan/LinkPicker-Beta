@@ -7,7 +7,6 @@ else:
     from PySide2 import QtWidgets, QtCore, QtGui
     Action  = QtWidgets.QAction
 
-from . import config
 
 class MainMenu(QtWidgets.QMenuBar):
     
@@ -66,7 +65,7 @@ class MainMenu(QtWidgets.QMenuBar):
         #self.cutAction    = Action('Cut', self.editMenu, shortcut='Ctrl+X')
         #self.copyAction   = Action(QtGui.QIcon(':polyCopyUV.png'), 'Copy',   self.editMenu, shortcut='Ctrl+C')
         #self.pasteAction  = Action(QtGui.QIcon(':polyPasteUV.png'), 'Paste', self.editMenu, shortcut='Ctrl+V')
-        self.changeBackgroundAction = Action(QtGui.QIcon(config.backgroundIcon), 'Change Background', self.editMenu)
+        self.changeBackgroundAction = Action(QtGui.QIcon('icons:backgroundLogo.png'), 'Change Background', self.editMenu)
         #self.resizeBackgroundAction = Action('Resize Background', self.editMenu)
         self.changeNamespaceAction  = Action('Change Namespace',  self.editMenu)
         # self.ToolAction = Action('Show ToolBox', self.editMenu)

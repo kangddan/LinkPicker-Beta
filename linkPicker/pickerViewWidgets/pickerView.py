@@ -10,10 +10,8 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from .. import (
-    qtUtils, config, widgets
-    )
-    
+from .. import widgets
+
 from . import (
     pickerButton, pickerMenu, pickerUtils, pickerStates,  
     zorder, align, selection, mirror, view, buttonManager, 

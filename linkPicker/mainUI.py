@@ -4,6 +4,7 @@ import maya.cmds as cmds
 import maya.api.OpenMaya as om2
 from functools import partial
 
+
 if int(cmds.about(version=True)) >= 2025:
     from PySide6 import QtWidgets, QtCore, QtGui
 else:

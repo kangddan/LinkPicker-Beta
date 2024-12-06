@@ -4,7 +4,7 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from . import widgets, config
+from . import widgets
 
 
 class ImageWindow(QtWidgets.QDialog):
@@ -61,7 +61,7 @@ class ImageWindow(QtWidgets.QDialog):
         self.pathLineEdit.setFixedHeight(32)
         self.pathLineEdit.setPlaceholderText('Image Path...')
         
-        self.pathLineEditAction = self.pathLineEdit.addAction(QtGui.QIcon(config.closeIcon), QtWidgets.QLineEdit.TrailingPosition)
+        self.pathLineEditAction = self.pathLineEdit.addAction(QtGui.QIcon('icons:close.png'), QtWidgets.QLineEdit.TrailingPosition)
         
         self.pathButton = QtWidgets.QPushButton('')
         self.pathButton.setIcon(QtGui.QIcon(':fileOpen.png'))

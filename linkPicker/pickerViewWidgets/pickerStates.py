@@ -315,8 +315,10 @@ class MoveButtonsState(MouseState):
                 # to undo cache list
                 _localPos = button.localPos
                 picker.undoMoveButtonsPosMap[button.buttonId] = {'old':[_localPos.x(), _localPos.y()]}
+        
         else:
-            picker.clearSelectedButtons()
+            pass
+            #picker.clearSelectedButtons()
 
 
     def handleMoveEvent(self, event, picker):
