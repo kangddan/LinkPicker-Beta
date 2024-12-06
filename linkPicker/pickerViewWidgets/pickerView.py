@@ -618,7 +618,6 @@ class PickerView(QtWidgets.QWidget):
         '''  
         PickerView.setSelectionViaUi(True)
         if self.selectedButtons and not self.clearSelectedNodes:
-            print(1)
             self.buttonManager.updateToolBoxWidget(self.selectedButtons[-1]) # update toolbox
             if event.button() not in (QtCore.Qt.RightButton, QtCore.Qt.MiddleButton):
                 selection.releaseAddSelection(self.allPickerButtons,
