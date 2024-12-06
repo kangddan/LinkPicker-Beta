@@ -1,0 +1,16 @@
+{
+    "general": {
+        "showNamespaceCheckBox": true,
+        "autoSelectedCheckBox": true,
+        "closeTabCheckBox": false,
+        "showTabBarCheckBox": true,
+        "toolBoxCheckBox": true,
+        "viewModeComboBox": 0,
+        "ZoomSlider": 26
+    },
+    "settings": {
+        "undo": true,
+        "queue": 20,
+        "undoToFile": false
+    }
+}
