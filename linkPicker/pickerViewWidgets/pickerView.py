@@ -145,6 +145,8 @@ class PickerView(QtWidgets.QWidget):
         
         self.cacheOldButtonsScaleX = {}
         self.cacheOldButtonsScaleY = {}
+        
+        self.keyPressed  = False
     
     
     def setUndoMode(self, enableUndo, undoQueue):
@@ -617,19 +619,38 @@ class PickerView(QtWidgets.QWidget):
         Avoid triggering callbacks in a loop after selecting buttons within the UI
         '''  
         PickerView.setSelectionViaUi(True)
-        if self.selectedButtons and not self.clearSelectedNodes:
-            self.buttonManager.updateToolBoxWidget(self.selectedButtons[-1]) # update toolbox
+
+        if (self.selectedButtons and not self.clearSelectedNodes) or self.keyPressed:
+            if self.selectedButtons:
+                self.buttonManager.updateToolBoxWidget(self.selectedButtons[-1]) # update toolbox
             if event.button() not in (QtCore.Qt.RightButton, QtCore.Qt.MiddleButton):
-                selection.releaseAddSelection(self.allPickerButtons,
-                                              self.nonMaxPickerButtons,
-                                              self.MaxPickerButtons,
-                                              self.selectedButtons)        
+                selectedNodes = selection.releaseAddSelection(self.allPickerButtons,
+                                                              self.nonMaxPickerButtons,
+                                                              self.MaxPickerButtons,
+                                                              self.selectedButtons)
+                
+                                                  
+                oldSelNodes = cmds.ls(sl=True)
+                if oldSelNodes and self.keyPressed:
+                    self.keyPressed = False
+                    
+                    selectedNodes.extend(oldSelNodes)
+                    selectedNodes = list(set(selectedNodes))
+                    
+                    for button in self.nonMaxPickerButtons:
+                        node = button[0]
+                        if node in selectedNodes and not button.selected:
+                            selectedNodes.remove(node)
+                    
+                cmds.select(selectedNodes, ne=True, replace=True)
         
         elif self.clearSelectedNodes:
             self.clearSelectedNodes = False
             
         elif not self.clearSelectedNodes:
             cmds.select(cl=True)
+        
+
             
         '''
         Permit callbacks when selecting nodes in Maya

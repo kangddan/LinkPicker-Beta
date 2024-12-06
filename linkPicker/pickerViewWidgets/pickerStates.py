@@ -164,9 +164,11 @@ class SelectedState(MouseState):
                 '''
                 picker.clearSelectedNodes = True 
                 return
-                
+  
             if event.modifiers() == QtCore.Qt.ShiftModifier:
+                picker.keyPressed = True
                 if picker.clickedButton not in picker.selectedButtons:
+                    
                     picker.selectedButtons.append(picker.clickedButton)
                     picker.clickedButton.setSelected(True)
                               
@@ -179,6 +181,9 @@ class SelectedState(MouseState):
             if not (event.modifiers() & (QtCore.Qt.ShiftModifier | QtCore.Qt.AltModifier)):
                 picker.clearSelectedButtons()
                 
+        if event.modifiers() == QtCore.Qt.ShiftModifier:
+            picker.keyPressed = True
+        
         
     def handleMoveEvent(self, event, picker):  
         if picker.clearSelectedNodes:
@@ -192,11 +197,17 @@ class SelectedState(MouseState):
 
         if not (event.modifiers() & QtCore.Qt.AltModifier):
             for button in picker.allPickerButtons:
-                if button.isCmdButton:
-                    continue
+                
+                # if button.isCmdButton:
+                #     continue
+                    
                 inSelection = picker.selectionBoxRect.intersects(button.geometry())
 
                 if event.modifiers() == QtCore.Qt.ShiftModifier:
+                    picker.keyPressed = True
+                    if button.isCmdButton:
+                        continue
+                    
                     if inSelection and button not in picker.selectedButtons:
                         button.setSelected(True)
                         picker.selectedButtons.append(button)
@@ -205,6 +216,10 @@ class SelectedState(MouseState):
                         button.setSelected(False)
                         picker.selectedButtons.remove(button)
                         picker.shiftAddButtons.remove(button)
+                        
+                elif button.isCmdButton:
+                    continue
+                    
                 elif inSelection:
                     '''
                     If the mouse click position is on a button
@@ -235,6 +250,7 @@ class SelectedState(MouseState):
         # clear selected button
         if picker.clickedButton is not None:
             if event.modifiers() == QtCore.Qt.AltModifier and event.button() != QtCore.Qt.MouseButton.RightButton:
+                picker.keyPressed = True
                 picker.clickedButton.setSelected(False)
                 if picker.clickedButton in picker.selectedButtons:
                     picker.selectedButtons.remove(picker.clickedButton)
@@ -247,6 +263,7 @@ class SelectedState(MouseState):
             Perform a second check. If the button is inside or intersects with the box, it will be deselected!!
             '''  
             if event.modifiers() == QtCore.Qt.AltModifier:
+                picker.keyPressed = True
                 for button in picker.allPickerButtons:
                     if not picker.selectionBoxRect.intersects(button.geometry()):# and button in picker.selectedButtons:
                         continue
