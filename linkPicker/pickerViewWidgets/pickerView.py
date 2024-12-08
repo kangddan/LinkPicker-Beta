@@ -625,9 +625,7 @@ class PickerView(QtWidgets.QWidget):
                 selectedNodes = selection.releaseAddSelection(self.allPickerButtons,
                                                               self.nonMaxPickerButtons,
                                                               self.MaxPickerButtons,
-                                                              self.selectedButtons)
-                
-                                                  
+                                                              self.selectedButtons)                                
                 oldSelNodes = cmds.ls(sl=True)
                 if oldSelNodes and self.keyPressed:
                     self.keyPressed = False
@@ -638,18 +636,15 @@ class PickerView(QtWidgets.QWidget):
                     for button in self.nonMaxPickerButtons:
                         node = button[0]
                         if node in selectedNodes and not button.selected:
-                            selectedNodes.remove(node)
-                    
+                            selectedNodes.remove(node)   
                 cmds.select(selectedNodes, ne=True, replace=True)
         
         elif self.clearSelectedNodes:
             self.clearSelectedNodes = False
             
-        elif not self.clearSelectedNodes:
+        else:
             cmds.select(cl=True)
-        
-
-            
+                    
         '''
         Permit callbacks when selecting nodes in Maya
         '''     
