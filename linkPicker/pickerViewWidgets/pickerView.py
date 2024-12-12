@@ -1,8 +1,7 @@
-import uuid
 import maya.cmds as cmds
 import maya.api.OpenMaya as om2
 import enum
-
+from collections import OrderedDict
 from functools import partial
 
 if int(cmds.about(version=True)) >= 2025:
@@ -10,7 +9,7 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from .. import widgets
+from .. import widgets, qtUtils
 
 from . import (
     pickerButton, pickerMenu, pickerUtils, pickerStates,  
@@ -625,18 +624,21 @@ class PickerView(QtWidgets.QWidget):
                 selectedNodes = selection.releaseAddSelection(self.allPickerButtons,
                                                               self.nonMaxPickerButtons,
                                                               self.MaxPickerButtons,
-                                                              self.selectedButtons)                                
+                                                              self.selectedButtons) 
+          
                 oldSelNodes = cmds.ls(sl=True)
                 if oldSelNodes and self.keyPressed:
                     self.keyPressed = False
                     
-                    selectedNodes.extend(oldSelNodes)
-                    selectedNodes = list(set(selectedNodes))
-                    
+                    #selectedNodes.extend(oldSelNodes)
+                    selectedNodes = oldSelNodes + selectedNodes
+                    selectedNodes = list(OrderedDict.fromkeys(selectedNodes))
+      
                     for button in self.nonMaxPickerButtons:
                         node = button[0]
                         if node in selectedNodes and not button.selected:
-                            selectedNodes.remove(node)   
+                            selectedNodes.remove(node)  
+    
                 cmds.select(selectedNodes, ne=True, replace=True)
         
         elif self.clearSelectedNodes:
@@ -685,7 +687,7 @@ class PickerView(QtWidgets.QWidget):
         
         _scale = self.sceneScale / self.origScale
         
-        pos = event.position() if int(cmds.about(version=True)) >= 2025 else event.pos()
+        pos = qtUtils.getLocalPos(event)
         cx, cy = pos.x(), pos.y()
         
         self.buttonsParentPos = QtCore.QPointF(cx + _scale * (self.buttonsParentPos.x() - cx), 
