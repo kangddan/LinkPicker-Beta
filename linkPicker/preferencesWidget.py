@@ -7,7 +7,7 @@ else:
     from PySide2 import QtWidgets, QtCore, QtGui
     Action = QtWidgets.QAction
 
-from . import widgets
+from . import widgets, qtUtils
 
 
 class NullWidget(QtWidgets.QLabel):
@@ -297,7 +297,7 @@ class ListWidget(QtWidgets.QListWidget):
         
     
     def mousePressEvent(self, event):
-        item = self.itemAt(event.pos())
+        item = self.itemAt(qtUtils.getLocalPos(event).toPoint())
         if not item:
             self.clearSelection() 
         super().mousePressEvent(event) 

@@ -22,9 +22,17 @@ def getMayaMainWindow() -> QtWidgets.QMainWindow:
     if sys.version_info.major >= 3:
         return wrapInstance(int(omui.MQtUtil.mainWindow()), QtWidgets.QMainWindow)
     return wrapInstance(long(omui.MQtUtil.mainWindow()), QtWidgets.QWidget)
-
-
-
-
-
     
+def getLocalPos(event) -> QtCore.QPointF:
+    if int(cmds.about(version=True)) >= 2025:
+        eventPos = event.position()
+    else: 
+        eventPos = event.localPos()
+    return eventPos
+    
+def getGlobalPos(event) -> QtCore.QPointF:
+    if int(cmds.about(version=True)) >= 2025:
+        eventPos = event.globalPosition()
+    else: 
+        eventPos = QtCore.QPointF(event.globalPos())
+    return eventPos

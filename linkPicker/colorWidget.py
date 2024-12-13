@@ -4,6 +4,7 @@ import maya.api.OpenMaya as om2
 import maya.OpenMayaUI   as omui
 
 from functools import partial
+from . import qtUtils
 
 if int(cmds.about(version=True)) >= 2025:
     from shiboken6 import wrapInstance
@@ -143,7 +144,7 @@ class _IndexColorPicker(QtWidgets.QDialog):
         
     def mouseMoveEvent(self, mouseEvent):
         super().mouseMoveEvent(mouseEvent)
-        globalPos = self.mapToGlobal(mouseEvent.pos())
+        globalPos = self.mapToGlobal(qtUtils.getLocalPos(mouseEvent).toPoint())
         localPos  = self.mapFromGlobal(globalPos)
         if not self.extendedRect.contains(localPos):
             self.hide()
@@ -275,7 +276,7 @@ class ColorWidget(QtWidgets.QLabel):
      
     def mousePressEvent(self, event):
         if event.buttons() == QtCore.Qt.MouseButton.RightButton and event.modifiers() == QtCore.Qt.NoModifier:
-            self.colorWidgetMenu.exec_(event.globalPos())
+            self.colorWidgetMenu.exec(qtUtils.getGlobalPos(event).toPoint())
         else:
             super().mousePressEvent(event)
         
@@ -287,7 +288,7 @@ class ColorWidget(QtWidgets.QLabel):
                 self._showCmdsRGBColorPicker()
             else:
                 # show index ColorPicker
-                pos = self.mapToGlobal(event.pos())
+                pos = self.mapToGlobal(qtUtils.getLocalPos(event).toPoint())
                 x = pos.x() - (self.indexColorPicker.width() // 2)
                 y = pos.y() - (self.indexColorPicker.height() // 2)
                 self.indexColorPicker.move(x, y)

@@ -8,7 +8,7 @@ if int(cmds.about(version=True)) >= 2025:
 else:
     from PySide2 import QtWidgets, QtCore, QtGui
 
-from .. import path
+from .. import path, qtUtils
 from . import pickerUtils
 
 
@@ -340,7 +340,7 @@ class PickerButton(QtWidgets.QWidget):
             self.setSelected(False)
             self.buttonEnum = PickerButtonEnum.NONE
             self.clickeMove(-1)  
-            if self.rect().contains(event.pos()):
+            if self.rect().contains(qtUtils.getLocalPos(event).toPoint()):
                 cmds.evalDeferred(self.code['code']) if self.code['type'] == 'Python' else mel.eval(self.code['code'])
    
         super().mouseReleaseEvent(event)

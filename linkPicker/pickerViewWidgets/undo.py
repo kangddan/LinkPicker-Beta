@@ -159,7 +159,7 @@ class BaseAlignCmd(PickerViewUndoBase):
                 'buttonIds'     : self.buttonIds,
                 'buttonsPosMap' : self.buttonsPosMap}
     
-    def set(self, data):
+    def set(self, data):  
         self.buttonIds      = data['buttonIds']
         self.buttonsPosMap  = data['buttonsPosMap']
   

@@ -55,6 +55,8 @@ class ImageWindow(QtWidgets.QDialog):
         self.undoWidth  = 0
         self.undoheight = 0
         
+        self._initTag = True
+        
         
     def _createWidgets(self):
         self.pathLineEdit = QtWidgets.QLineEdit()
@@ -185,11 +187,16 @@ class ImageWindow(QtWidgets.QDialog):
         self.pathLineEdit.setText(imagePath)
         imageSize = image.size()    
         
-        w = self.undoWidth if self.undoWidth != 1 else imageSize.width()
-        h = self.undoheight if self.undoheight != 1 else imageSize.height()
+        if self._initTag:
+            self._initTag = False
+            self.undoWidth  = imageSize.width()
+            self.undoheight = imageSize.height()
+            
+        # w = self.undoWidth if self.undoWidth != 1 else imageSize.width()
+        # h = self.undoheight if self.undoheight != 1 else imageSize.height()
         
-        self.widthLineEdit.set(w)
-        self.heightLineEdit.set(h)
+        self.widthLineEdit.set(self.undoWidth)
+        self.heightLineEdit.set(self.undoheight)
         self.imagePathSet.emit(imagePath)  
         self.resizeImage.emit(self.widthLineEdit.get(), self.heightLineEdit.get())
    

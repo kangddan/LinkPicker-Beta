@@ -115,7 +115,7 @@ class MainUI(QtWidgets.QWidget):
             return
         self.isFirstShow = False
         
-        self.namespaceWidget.updateNamespace() # update namespace
+        self.namespaceWidget.updateNamespace() # update namespaceac
         
         if self.GEOMETRY is not None:
             self.restoreGeometry(self.GEOMETRY) 

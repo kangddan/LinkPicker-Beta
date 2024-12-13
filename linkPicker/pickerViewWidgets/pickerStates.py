@@ -9,6 +9,7 @@ else:
     from PySide2 import QtCore
 
 from . import pickerUtils, selection, undo
+from .. import qtUtils
 
 
 class MouseState(ABC):
@@ -71,7 +72,7 @@ class ShowMenuState(MouseState):
     def handlePressEvent(self, event, picker):
         picker.clickedButton = None
         for button in picker.allPickerButtons:
-            if button.geometry().contains(event.pos()):
+            if button.geometry().contains(qtUtils.getLocalPos(event).toPoint()):
                 picker.clickedButton = button
                 
         if picker.clickedButton is not None and not picker.clickedButton.selected:
@@ -85,8 +86,8 @@ class ShowMenuState(MouseState):
             picker.clickedButton.setSelected(True)
             picker.buttonManager.updateToolBoxWidget(picker.clickedButton) # update toolBox
 
-        picker.buttonGlobalPos = event.localPos() # update button global pos
-        picker.pickerViewMenu.exec_(event.globalPos())
+        picker.buttonGlobalPos = qtUtils.getLocalPos(event) # update button global pos
+        picker.pickerViewMenu.exec_(qtUtils.getGlobalPos(event).toPoint())
 
     def handleMoveEvent(self, event, picker):     
         pass
@@ -147,7 +148,7 @@ class ScaleViewState(MouseState):
 class SelectedState(MouseState):
     
     def handlePressEvent(self, event, picker):
-        picker.startPos = event.pos()
+        picker.startPos = qtUtils.getLocalPos(event).toPoint()
         picker.selectionBox.setGeometry(QtCore.QRect(picker.startPos, QtCore.QSize())); picker.selectionBox.show() # show selectionBox
         
         # update tag
@@ -191,7 +192,7 @@ class SelectedState(MouseState):
         if picker.clearSelectedNodes:
             picker.clearSelectedNodes = False
         
-        picker.endPos = event.pos()
+        picker.endPos = qtUtils.getLocalPos(event).toPoint()
         picker.clearMoveTag = True # update cleat tag
             
         picker.selectionBox.setGeometry(QtCore.QRect(picker.startPos, picker.endPos).normalized()) # update selectionBox

@@ -2,6 +2,7 @@
 import maya.api.OpenMaya as om2
 import maya.cmds as cmds
 from functools import partial
+from . import qtUtils
 
 if int(cmds.about(version=True)) >= 2025:
     from PySide6 import QtWidgets, QtCore, QtGui
@@ -185,16 +186,16 @@ class MyTabWidget(QtWidgets.QTabWidget):
                     '''
                     All three types of mouse buttons can trigger the addTableMenu
                     '''
-                    if self.tabBar.tabAt(event.pos()) == self.count() - 1:
-                        self.addTableMenu.exec_(event.globalPos())
+                    if self.tabBar.tabAt(qtUtils.getLocalPos(event).toPoint()) == self.count() - 1:
+                        self.addTableMenu.exec_(qtUtils.getGlobalPos(event).toPoint())
                         return True
                         
                     elif event.buttons() in [QtCore.Qt.RightButton, QtCore.Qt.MiddleButton]:
                         self.MouseRightandMid  = True
-                        index = self.tabBar.tabAt(event.pos()) # get tag index
+                        index = self.tabBar.tabAt(qtUtils.getLocalPos(event).toPoint()) # get tag index
                         self.closeOthersAction.setData(index) 
                         self.duplicateAction.setData(index) 
-                        self.TableMenu.exec_(event.globalPos())
+                        self.TableMenu.exec(qtUtils.getGlobalPos(event).toPoint())
                         return True
                     
                     
@@ -619,7 +620,7 @@ class NamespaceEditWidget(QtWidgets.QDialog):
         mainLayout.addWidget(self.namespaceComboBox)
         
         butsLayout = QtWidgets.QHBoxLayout()
-        butsLayout.setSpacing(5)
+        butsLayout.setSpacing(3)
         butsLayout.addWidget(self.okBut)
         butsLayout.addWidget(self.closeBut)
         mainLayout.addLayout(butsLayout)
