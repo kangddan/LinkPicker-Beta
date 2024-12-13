@@ -687,7 +687,8 @@ class PickerView(QtWidgets.QWidget):
         
         _scale = self.sceneScale / self.origScale
         
-        pos = qtUtils.getLocalPos(event)
+        #pos = qtUtils.getLocalPos(event)
+        pos = event.position() if int(cmds.about(version=True)) >= 2025 else event.pos()
         cx, cy = pos.x(), pos.y()
         
         self.buttonsParentPos = QtCore.QPointF(cx + _scale * (self.buttonsParentPos.x() - cx), 
