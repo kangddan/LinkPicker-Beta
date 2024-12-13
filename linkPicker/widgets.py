@@ -195,7 +195,7 @@ class MyTabWidget(QtWidgets.QTabWidget):
                         index = self.tabBar.tabAt(qtUtils.getLocalPos(event).toPoint()) # get tag index
                         self.closeOthersAction.setData(index) 
                         self.duplicateAction.setData(index) 
-                        self.TableMenu.exec(qtUtils.getGlobalPos(event).toPoint())
+                        self.TableMenu.exec_(qtUtils.getGlobalPos(event).toPoint())
                         return True
                     
                     
