@@ -276,7 +276,7 @@ class ColorWidget(QtWidgets.QLabel):
      
     def mousePressEvent(self, event):
         if event.buttons() == QtCore.Qt.MouseButton.RightButton and event.modifiers() == QtCore.Qt.NoModifier:
-            self.colorWidgetMenu.exec(qtUtils.getGlobalPos(event).toPoint())
+            self.colorWidgetMenu.exec_(qtUtils.getGlobalPos(event).toPoint())
         else:
             super().mousePressEvent(event)
         
