@@ -140,6 +140,12 @@ class MainUI(QtWidgets.QWidget):
         if isinstance(self, MainUI):
             super().closeEvent(event)
             self.setScriptJobEnabled(False)
+            
+        self.savePickerDataToSceneNode()
+        self.deleteAllTab()
+        
+        
+    def savePickerDataToSceneNode(self):
         '''
         If a file is referenced while the picker is open, and the reference file contains pickerNode data,
         the tabs will not refresh automatically (since no callback for references has been identified yet).
@@ -152,7 +158,7 @@ class MainUI(QtWidgets.QWidget):
             pickerData.extend(refData)
         
         metaNode.mergeNodes().set(pickerData)
-        self.deleteAllTab()
+        
         
         
     def saveCurrentTabIndex(self):
@@ -300,7 +306,7 @@ class MainUI(QtWidgets.QWidget):
         
         self.mainMenuBar.newTriggered.connect(self.tabWidget.newTab.emit)
         self.mainMenuBar.openTriggered.connect(lambda: self.fileManager.open())
-        self.mainMenuBar.saveTriggered.connect(lambda: self.fileManager.save(self.undoToFile))
+        self.mainMenuBar.saveTriggered.connect(self._saveActionHandle)
         self.mainMenuBar.saveAsTriggered.connect(lambda: self.fileManager.saveAs(self.undoToFile))
         self.mainMenuBar.renameTabTriggered.connect(lambda: self.tabWidget._renameTab(self.tabWidget.currentIndex()))
         self.mainMenuBar.closeTriggered.connect(lambda: self.tabWidget._closeTab(self.tabWidget.currentIndex()))
@@ -313,6 +319,12 @@ class MainUI(QtWidgets.QWidget):
         self.mainMenuBar.changeBackgroundTriggered.connect(self._showImageWidget)
         self.mainMenuBar.changeNamespaceTriggered.connect(self._showNamespaceEdit)
         self.mainMenuBar.preferencesTriggered.connect(self._showPreferences)
+        
+    
+    def _saveActionHandle(self):
+        self.fileManager.save(self.undoToFile)
+        self.savePickerDataToSceneNode()
+        
         
     # ---------------------------------------------------------------------------------------------------    
     def getCurrentPickerView(self):
