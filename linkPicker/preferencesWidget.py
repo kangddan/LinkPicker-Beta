@@ -171,6 +171,7 @@ class SettingsWidget(QtWidgets.QWidget):
         gridLayout.addWidget(self.finiteBut, 1, 2)
         gridLayout.addWidget(self.queueSizeLabel, 2, 0)
         gridLayout.addWidget(self.undoLenEdit, 2, 1)
+        gridLayout.setColumnStretch(3, 1)
 
         undoGroupBox = createGroupbox('Undo', gridLayout)
         
